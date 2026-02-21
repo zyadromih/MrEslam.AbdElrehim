@@ -126,7 +126,10 @@
             position: relative;
             height: 60vh;
             min-height: 400px;
-            background: url('WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg') center/cover no-repeat fixed;
+            background-position: center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -596,15 +599,15 @@
             position: fixed;
             bottom: 80px;
             left: 20px;
-            background: var(--secondary);
-            color: white;
-            padding: 5px 10px;
+            background: var(--surface);
+            color: var(--text-main);
+            padding: 10px 15px;
             border-radius: 20px;
-            font-size: 0.8rem;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            pointer-events: none;
+            font-size: 0.9rem;
+            box-shadow: var(--shadow);
             z-index: 1500;
             display: none;
+            border: 1px solid var(--border);
         }
 
         /* FAB - Add Category Bubble */
@@ -890,11 +893,12 @@
 <body>
 
     <header>
-        <a href="#" class="logo" onclick="navTo('نبذه عني')">
-            <img src="WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg" alt="Logo"
-                style="border-radius:50%; object-fit:cover;">
-            <span>الأستاذ إسلام عبد الرحيم</span>
-        </a>
+        <div class="logo">
+            <img id="headerLogo" src="WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg" alt="Logo"
+                style="border-radius:50%; object-fit:cover; cursor:pointer;" onclick="navTo('نبذه عني')"
+                title="اضغط لتغيير الصورة (للمسؤول فقط)">
+            <span style="cursor:pointer;" onclick="navTo('نبذه عني')">الأستاذ إسلام عبد الرحيم</span>
+        </div>
 
         <div class="header-slogan">
             <i class="fa-solid fa-graduation-cap"></i>
@@ -976,10 +980,18 @@
     <!-- Admin Tools -->
     <div class="admin-float" onclick="showLogin()"><i class="fa-solid fa-lock"></i></div>
     <div class="admin-indicator" id="adminIndicator">
-        💎 وضع المسؤول مفعل
-        <button class="btn btn-primary" style="font-size:0.7rem; padding:5px 10px; margin-right:10px;"
+        <div style="margin-bottom:10px; font-weight:bold; color:var(--accent);">
+            <i class="fa-solid fa-user-shield"></i> وضع المسؤول مفعل
+        </div>
+        <button class="btn btn-primary"
+            style="font-size:0.8rem; padding:8px 12px; margin-right:5px; margin-bottom:5px; border-radius:30px;"
+            onclick="editSiteLogo()">
+            <i class="fa-solid fa-image"></i> تغيير الصورة الشخصية
+        </button>
+        <button class="btn btn-primary"
+            style="font-size:0.8rem; padding:8px 12px; margin-right:5px; margin-bottom:5px; border-radius:30px;"
             onclick="saveSiteToFile()">
-            <i class="fa-solid fa-download"></i> حفظ التعديلات في ملف
+            <i class="fa-solid fa-download"></i> حفظ التعديلات بملف
         </button>
     </div>
 
@@ -1145,6 +1157,7 @@
 
         // Default Data Structure
         const DEFAULT_DATA = {
+            siteLogo: "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg",
             sections: [
                 {
                     title: "الكورسات",
@@ -1168,11 +1181,19 @@
         };
 
         // Initialize Variables
+        let siteLogo = DEFAULT_DATA.siteLogo;
         let sections = DEFAULT_DATA.sections;
         let featured = DEFAULT_DATA.featured;
         let offers = DEFAULT_DATA.offers;
         let pages = DEFAULT_DATA.pages;
         let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+        // Apply site logo helper
+        function applySiteLogo() {
+            document.getElementById("headerLogo").src = siteLogo;
+            document.getElementById("headerLogo").onerror = function () { this.src = 'https://via.placeholder.com/150'; };
+            document.getElementById("heroSection").style.backgroundImage = `url('${siteLogo}')`;
+        }
 
         // ===== DATA LOADING =====
         function ensureDefaults() {
@@ -1185,6 +1206,7 @@
                 db.collection("app_data").doc("main").onSnapshot((doc) => {
                     if (doc.exists) {
                         const data = doc.data();
+                        siteLogo = data.siteLogo || DEFAULT_DATA.siteLogo;
                         sections = data.sections || DEFAULT_DATA.sections;
                         featured = data.featured || DEFAULT_DATA.featured;
                         offers = data.offers || DEFAULT_DATA.offers;
@@ -1193,7 +1215,9 @@
                             sections[0].title = "الكورسات";
                             sections = [sections[0]];
                         }
-                        pages = DEFAULT_DATA.pages;
+                        pages = data.pages || DEFAULT_DATA.pages;
+
+                        applySiteLogo();
 
                         // Force update defaults if missing
                         ensureDefaults();
@@ -1222,6 +1246,7 @@
         }
 
         function loadFromLocal() {
+            siteLogo = localStorage.getItem("siteLogo") || DEFAULT_DATA.siteLogo;
             sections = JSON.parse(localStorage.getItem("site_sections_v3")) || DEFAULT_DATA.sections;
             featured = JSON.parse(localStorage.getItem("featured")) || DEFAULT_DATA.featured;
             offers = JSON.parse(localStorage.getItem("offers")) || DEFAULT_DATA.offers;
@@ -1233,12 +1258,14 @@
                 sections = DEFAULT_DATA.sections;
             }
 
-            pages = DEFAULT_DATA.pages;
+            pages = JSON.parse(localStorage.getItem("pages")) || DEFAULT_DATA.pages;
+            applySiteLogo();
         }
 
         // ===== SAVING =====
         function saveData() {
             const dataToSave = {
+                siteLogo,
                 sections,
                 featured,
                 offers,
@@ -1256,6 +1283,7 @@
                         alert("فشل الحفظ في السحابة!");
                     });
             } else {
+                localStorage.setItem("siteLogo", siteLogo);
                 localStorage.setItem("site_sections_v3", JSON.stringify(sections));
                 localStorage.setItem("featured", JSON.stringify(featured));
                 localStorage.setItem("offers", JSON.stringify(offers));
@@ -1277,7 +1305,7 @@
 
             // Prepare validation data
             const newData = {
-                sections, featured, offers, pages
+                siteLogo, sections, featured, offers, pages
             };
 
             // Regex to find and replace the Hardcoded Data block
@@ -1444,9 +1472,10 @@
             container.innerHTML = `
                 <div class="section-header">
                     <h2>${key}</h2>
-                    ${isAdmin ? `<button class="btn btn-secondary" onclick="updatePage('${key}')">تعديل النص</button>` : ''}
+                    ${isAdmin ? `<button id="editPageBtn" class="btn btn-secondary" onclick="toggleEditPage('${key}')"><i class="fa-solid fa-pen"></i> تعديل النص</button>` : ''}
                 </div>
-                <div style="background:#fff; padding:30px; border-radius:12px; line-height:1.8;">${pages[key]}</div>
+                <!-- wrapper div that will become contentEditable -->
+                <div id="pageContentDiv" style="outline:none; transition:0.3s;">${pages[key]}</div>
             `;
         }
 
@@ -1727,6 +1756,25 @@
             else if (code) alert("خطأ ❌");
         }
 
+        function editSiteLogo() {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/*";
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    siteLogo = event.target.result;
+                    applySiteLogo();
+                    saveData();
+                    alert("تم تغيير الصورة الشخصية بنجاح! ✨");
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
         function quickAddCategory(secIndex) {
             const title = prompt("اسم التصنيف الجديد:");
             if (title) { sections[secIndex].categories.push({ title, items: [], img: "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg" }); saveData(); render(); }
@@ -1754,7 +1802,47 @@
             else { const lc = l.split(','); sections[lc[0]].categories[lc[1]].items.splice(i, 1); }
             saveData(); render();
         }
-        function updatePage(k) { const t = prompt("النص:", pages[k]); if (t) { pages[k] = t; saveData(); render(); } }
+
+        let isEditingPage = false;
+        function toggleEditPage(key) {
+            const contentDiv = document.getElementById("pageContentDiv");
+            const btn = document.getElementById("editPageBtn");
+            if (!isEditingPage) {
+                // Enable editing
+                contentDiv.contentEditable = "true";
+                contentDiv.style.border = "2px dashed var(--accent)";
+                contentDiv.style.padding = "10px";
+                contentDiv.style.borderRadius = "12px";
+                contentDiv.focus();
+
+                btn.innerHTML = `<i class="fa-solid fa-check"></i> حفظ التعديلات`;
+                btn.className = "btn btn-primary";
+                btn.style.background = "#25D366";
+                btn.style.color = "#fff";
+                isEditingPage = true;
+            } else {
+                // Save and disable
+                contentDiv.contentEditable = "false";
+                contentDiv.style.border = "none";
+                contentDiv.style.padding = "0";
+
+                pages[key] = contentDiv.innerHTML;
+                saveData();
+
+                btn.innerHTML = `<i class="fa-solid fa-pen"></i> تعديل النص`;
+                btn.className = "btn btn-secondary";
+                btn.style.background = "var(--border)";
+                btn.style.color = "var(--text-main)";
+                isEditingPage = false;
+
+                // Show a brief success feedback instead of an annoying alert
+                const originalText = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-check-double"></i> تم الحفظ`;
+                setTimeout(() => {
+                    if (!isEditingPage) btn.innerHTML = originalText;
+                }, 2000);
+            }
+        }
 
         // Start
         initNav();
