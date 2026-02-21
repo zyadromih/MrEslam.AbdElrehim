@@ -990,6 +990,11 @@
         </button>
         <button class="btn btn-primary"
             style="font-size:0.8rem; padding:8px 12px; margin-right:5px; margin-bottom:5px; border-radius:30px;"
+            onclick="editHeroImage()">
+            <i class="fa-solid fa-image"></i> تغيير صورة الغلاف
+        </button>
+        <button class="btn btn-primary"
+            style="font-size:0.8rem; padding:8px 12px; margin-right:5px; margin-bottom:5px; border-radius:30px;"
             onclick="saveSiteToFile()">
             <i class="fa-solid fa-download"></i> حفظ التعديلات بملف
         </button>
@@ -1158,6 +1163,7 @@
         // Default Data Structure
         const DEFAULT_DATA = {
             siteLogo: "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg",
+            heroImage: "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg",
             sections: [
                 {
                     title: "الكورسات",
@@ -1182,17 +1188,18 @@
 
         // Initialize Variables
         let siteLogo = DEFAULT_DATA.siteLogo;
+        let heroImage = DEFAULT_DATA.heroImage;
         let sections = DEFAULT_DATA.sections;
         let featured = DEFAULT_DATA.featured;
         let offers = DEFAULT_DATA.offers;
         let pages = DEFAULT_DATA.pages;
         let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-        // Apply site logo helper
-        function applySiteLogo() {
+        // Apply site media helper
+        function applySiteMedia() {
             document.getElementById("headerLogo").src = siteLogo;
             document.getElementById("headerLogo").onerror = function () { this.src = 'https://via.placeholder.com/150'; };
-            document.getElementById("heroSection").style.backgroundImage = `url('${siteLogo}')`;
+            document.getElementById("heroSection").style.backgroundImage = `url('${heroImage}')`;
         }
 
         // ===== DATA LOADING =====
@@ -1207,6 +1214,7 @@
                     if (doc.exists) {
                         const data = doc.data();
                         siteLogo = data.siteLogo || DEFAULT_DATA.siteLogo;
+                        heroImage = data.heroImage || DEFAULT_DATA.heroImage;
                         sections = data.sections || DEFAULT_DATA.sections;
                         featured = data.featured || DEFAULT_DATA.featured;
                         offers = data.offers || DEFAULT_DATA.offers;
@@ -1217,7 +1225,7 @@
                         }
                         pages = data.pages || DEFAULT_DATA.pages;
 
-                        applySiteLogo();
+                        applySiteMedia();
 
                         // Force update defaults if missing
                         ensureDefaults();
@@ -1247,6 +1255,7 @@
 
         function loadFromLocal() {
             siteLogo = localStorage.getItem("siteLogo") || DEFAULT_DATA.siteLogo;
+            heroImage = localStorage.getItem("heroImage") || DEFAULT_DATA.heroImage;
             sections = JSON.parse(localStorage.getItem("site_sections_v3")) || DEFAULT_DATA.sections;
             featured = JSON.parse(localStorage.getItem("featured")) || DEFAULT_DATA.featured;
             offers = JSON.parse(localStorage.getItem("offers")) || DEFAULT_DATA.offers;
@@ -1259,13 +1268,14 @@
             }
 
             pages = JSON.parse(localStorage.getItem("pages")) || DEFAULT_DATA.pages;
-            applySiteLogo();
+            applySiteMedia();
         }
 
         // ===== SAVING =====
         function saveData() {
             const dataToSave = {
                 siteLogo,
+                heroImage,
                 sections,
                 featured,
                 offers,
@@ -1284,6 +1294,7 @@
                     });
             } else {
                 localStorage.setItem("siteLogo", siteLogo);
+                localStorage.setItem("heroImage", heroImage);
                 localStorage.setItem("site_sections_v3", JSON.stringify(sections));
                 localStorage.setItem("featured", JSON.stringify(featured));
                 localStorage.setItem("offers", JSON.stringify(offers));
@@ -1305,7 +1316,7 @@
 
             // Prepare validation data
             const newData = {
-                siteLogo, sections, featured, offers, pages
+                siteLogo, heroImage, sections, featured, offers, pages
             };
 
             // Regex to find and replace the Hardcoded Data block
@@ -1766,9 +1777,28 @@
                 const reader = new FileReader();
                 reader.onload = (event) => {
                     siteLogo = event.target.result;
-                    applySiteLogo();
+                    applySiteMedia();
                     saveData();
                     alert("تم تغيير الصورة الشخصية بنجاح! ✨");
+                };
+                reader.readAsDataURL(file);
+            };
+            input.click();
+        }
+
+        function editHeroImage() {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/*";
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    heroImage = event.target.result;
+                    applySiteMedia();
+                    saveData();
+                    alert("تم تغيير صورة الغلاف بنجاح! ✨");
                 };
                 reader.readAsDataURL(file);
             };
