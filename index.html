@@ -1722,10 +1722,26 @@
             document.getElementById("checkoutModal").style.display = "none";
         }
 
+        function escapeHTML(str) {
+            const div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        function linkify(text) {
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return escapeHTML(text).replace(urlRegex, function (url) {
+                return '<a href="' + url + '" target="_blank" style="color:var(--accent); text-decoration:underline; font-weight:bold;">الرابط 🔗</a>';
+            });
+        }
+
         function openCourseDetails(item) {
             document.getElementById("cdTitle").innerText = item.title;
             document.getElementById("cdPrice").innerText = item.price || 'السعر عند الطلب';
-            document.getElementById("cdDesc").innerText = item.desc || 'لا توجد نبذة إضافية لهذا الكورس.';
+
+            let desc = item.desc || 'لا توجد نبذة إضافية لهذا الكورس.';
+            document.getElementById("cdDesc").innerHTML = linkify(desc);
+
             document.getElementById("cdImage").style.backgroundImage = `url('${item.img || "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).png.jpeg"}')`;
             const addBtn = document.getElementById("cdAddBtn");
             const itemJson = JSON.stringify(item).replace(/'/g, "&#39;");
