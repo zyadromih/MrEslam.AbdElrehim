@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الكورسات</title>
+    <!-- إضافة خط Cairo من جوجل ليعمل الخط بشكل صحيح -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=3">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-brand">
+            <div style="font-size: 1.5rem; font-weight: 700;">الكورسات</div>
+        </div>
+        <nav>
+            <a href="index.html">الرئيسية</a>
+            <a href="courses.html" class="active">الكورسات</a>
+            <a href="contact.html">التواصل</a>
+            <button onclick="toggleCart()"
+                style="font-size: 1.2rem; background: transparent; padding: 0 10px; margin-right: 15px; box-shadow: none;">
+                🛒 <span id="cartCount"
+                    style="background: red; color: white; border-radius: 50%; padding: 2px 6px; font-size: 0.8rem; position: relative; top: -10px; right: -5px; display: none;">0</span>
+            </button>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div id="products"></div>
+
+        <div id="adminPanel" style="display:none">
+            <!-- 1. إضافة تصنيف -->
+            <h3 style="color:#d4af37; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">إضافة
+                تصنيف جديد</h3>
+            <div style="display:flex; gap:10px; margin-bottom: 30px;">
+                <input id="newCategoryName" placeholder="اسم التصنيف (مثال: الصف الأول الإعدادي)"
+                    style="margin-bottom:0;">
+                <button onclick="addCategory()"
+                    style="background: linear-gradient(135deg, #d4af37, #b5952f); color:#000; width:150px; border-radius:8px; white-space:nowrap;">إضافة
+                    تصنيف</button>
+            </div>
+
+            <!-- 2. إضافة كورس -->
+            <h3 style="color:#d4af37; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">إضافة كورس
+                إلى تصنيف</h3>
+            <select id="categorySelect"
+                style="width: 100%; padding: 12px; margin-bottom: 15px; background: #0f0f0f; color: #fff; border: 1px solid #333; border-radius: 8px; font-family: 'Cairo', sans-serif; cursor:pointer;">
+                <!-- ستتم التعبئة من الجافاسكريبت -->
+            </select>
+            <input id="name" placeholder="اسم الكورس">
+            <input id="price" type="number" placeholder="السعر">
+            <input type="file" id="image" accept="image/*"
+                style="padding:8px; display:block; margin-bottom:15px; background:transparent; border:none; color:#a0a0a0;">
+            <button onclick="addCourse()" style="width: 100%; margin-bottom: 25px;">إضافة الكورس</button>
+
+            <button onclick="logout()" style="background: linear-gradient(135deg, #e63946, #b02a35); width: 100%;">تسجيل
+                خروج لوحة التحكم</button>
+        </div>
+    </div>
+
+    <!-- السلة -->
+    <div class="cart" id="cartBox">
+        <h3 style="margin-top: 0; padding-bottom: 10px; border-bottom: 1px solid #333; color: #fff;">سلة المشتريات</h3>
+        <div id="cartItems">
+            <p style="text-align: center; color: #777; font-size: 0.9rem;">السلة فارغة حالياً</p>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 15px; font-weight: bold; color:#d4af37;">
+            <span>الإجمالي:</span>
+            <span id="cartTotal">0</span>
+        </div>
+        <button onclick="checkout()"
+            style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #25D366, #1da851);">إتمام الشراء
+            عبر واتساب</button>
+        <button onclick="toggleCart()" style="width: 100%; margin-top: 5px; background: #333; color: #fff;">إغلاق
+            السلة</button>
+    </div>
+
+    <!-- زر الدخول كمسؤول -->
+    <div class="admin-icon" onclick="showLogin()" title="تسجيل الدخول للإدارة">⚙️</div>
+
+    <!-- نافذة تسجيل الدخول للمسؤول -->
+    <div class="admin-login" id="loginBox">
+        <div class="admin-box">
+            <h3 style="margin-top: 0; color:#d4af37;">لوحة تحكم الأستاذ</h3>
+            <input type="password" id="adminPass" placeholder="كلمة المرور للإدارة" style="margin-top:20px;">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="login()" style="flex: 1;">دخول</button>
+                <button onclick="hideLogin()" style="flex: 1; background: #333; color: #ccc;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التواصل</title>
+    <!-- إضافة خط Cairo من جوجل ليعمل الخط بشكل صحيح -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- مكتبة FontAwesome للأيقونات الاحترافية -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=3">
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-brand">
+            <div style="font-size: 1.5rem; font-weight: 700;">التواصل</div>
+        </div>
+        <nav>
+            <a href="index.html">الرئيسية</a>
+            <a href="courses.html">الكورسات</a>
+            <a href="contact.html" class="active">التواصل</a>
+        </nav>
+    </header>
+
+    <div class="container" style="max-width: 800px;">
+        <div class="card">
+
+            <h2 style="color:#d4af37;">طرق التواصل مع الأستاذ</h2>
+
+            <p style="font-size: 1.3rem; margin-bottom: 30px; color: #e0e0e0;">
+                يسعدنا الرد على استفساراتكم من خلال واتساب على الرقم:<br>
+                <strong style="color: #d4af37; font-size:1.5rem; letter-spacing: 2px;">01128131379</strong>
+            </p>
+
+            <div class="contact-links">
+                <a href="https://wa.me/201128131379" target="_blank" class="btn-wa">
+                    <i class="fab fa-whatsapp" style="color:#25D366; font-size:1.5rem; margin-left:12px;"></i>
+                    تواصل مباشر عبر واتساب
+                </a>
+                <a href="https://www.facebook.com/profile.php?id=100094784482058" target="_blank" class="btn-fb">
+                    <i class="fab fa-facebook" style="color:#1877F2; font-size:1.5rem; margin-left:12px;"></i>
+                    صفحتنا على فيسبوك
+                </a>
+                <a href="https://youtube.com/@islam.abdalrhim?si=Al_u31fhxS6Ug9VG" target="_blank" class="btn-yt">
+                    <i class="fab fa-youtube" style="color:#FF0000; font-size:1.5rem; margin-left:12px;"></i>
+                    قناتنا على يوتيوب
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
