@@ -11,9 +11,20 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let products = []; // سيتم جلبها من Firestore
-let categoriesList = JSON.parse(localStorage.getItem("categoriesList")) || ["كورسات عامة"];
+let categoriesList = []; // سيتم جلبها من Firestore
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
-let admin = sessionStorage.getItem("admin") === "true";
+let admin = false; // يتم الدخول فقط بكلمة المرور ولا يحفظ عند التحديث
+
+// جلب التصنيفات من Firestore في الوقت الفعلي
+db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
+    if (snapshot.empty) {
+        // إذا كانت القائمة فارغة تماماً عند أول تشغيل، ننشئ التصنيف الافتراضي
+        db.collection("categories").add({ name: "كورسات عامة", createdAt: new Date() });
+    } else {
+        categoriesList = snapshot.docs.map(doc => doc.data().name);
+        render();
+    }
+});
 
 // جلب المنتجات من Firestore في الوقت الفعلي
 db.collection("products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
@@ -27,28 +38,41 @@ function saveCategories() { localStorage.setItem("categoriesList", JSON.stringif
 function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)) }
 
 // إضافة تصنيف جديد
-function addCategory() {
-    let catName = document.getElementById("newCategoryName").value;
+async function addCategory() {
+    let catName = document.getElementById("newCategoryName").value.trim();
     if (!catName) return alert("الرجاء إدخال اسم التصنيف");
     if (categoriesList.includes(catName)) return alert("هذا التصنيف موجود مسبقاً");
 
-    categoriesList.push(catName);
-    saveCategories();
-    document.getElementById("newCategoryName").value = "";
-    render();
-    alert("تم إضافة التصنيف بنجاح!");
+    try {
+        await db.collection("categories").add({
+            name: catName,
+            createdAt: new Date()
+        });
+        document.getElementById("newCategoryName").value = "";
+        alert("تم إضافة التصنيف بنجاح!");
+    } catch (error) {
+        console.error("Error adding category:", error);
+        alert("حدث خطأ أثناء إضافة التصنيف.");
+    }
 }
 
-function delCategory(catName) {
+async function delCategory(catName) {
     let hasProducts = products.some(p => p.category === catName);
     if (hasProducts) {
         alert("لا يمكن حذف هذا التصنيف لأنه يحتوي على كورسات! الرجاء حذف الكورسات التابعة له أولاً.");
         return;
     }
     if (confirm("هل أنت متأكد من حذف هذا التصنيف؟")) {
-        categoriesList = categoriesList.filter(c => c !== catName);
-        saveCategories();
-        render();
+        try {
+            const query = await db.collection("categories").where("name", "==", catName).get();
+            const batch = db.batch();
+            query.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert("تم حذف التصنيف.");
+        } catch (error) {
+            console.error("Error deleting category:", error);
+            alert("حدث خطأ أثناء حذف التصنيف.");
+        }
     }
 }
 
@@ -307,7 +331,7 @@ function login() {
     let pass = document.getElementById("adminPass").value;
     if (pass === "1357") {
         admin = true;
-        sessionStorage.setItem("admin", "true");
+        document.getElementById("loginBox").style.display = "none";
         document.getElementById("loginBox").style.display = "none";
         document.getElementById("adminPass").value = "";
         render(); // إعادة رسم الصفحة لإظهار لوحة التحكم
@@ -318,7 +342,6 @@ function login() {
 
 function logout() {
     admin = false;
-    sessionStorage.removeItem("admin");
     let panel = document.getElementById("adminPanel");
     if (panel) panel.style.display = "none";
     render(); // إعادة رسم الصفحة لإخفاء أزرار الحذف
