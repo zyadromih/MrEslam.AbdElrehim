@@ -26,13 +26,21 @@ header {
     gap: 15px;
 }
 
-.header-logo {
-    width: 45px;
-    height: 45px;
+.logo-img {
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid #d4af37;
-    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logo-img:hover {
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 0 25px rgba(212, 175, 55, 0.5);
+    border-color: #fff;
 }
 
 nav a {
