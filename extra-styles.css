@@ -1,0 +1,571 @@
+/* تحسينات بريميوم للكورسات */
+body {
+    background: radial-gradient(circle at 15% 50%, rgba(212, 175, 55, 0.05), transparent 40%),
+        radial-gradient(circle at 85% 30%, rgba(212, 175, 55, 0.03), transparent 50%),
+        #0a0a0a;
+}
+
+.category-section {
+    margin-bottom: 80px;
+    animation: fadeInUp 0.8s ease backwards;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================
+   ترتيب خلفيات الصفحات (Page Backgrounds)
+========================================= */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    opacity: 0.10;
+    /* الشفافية المطلوبة داكنة أكثر */
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+}
+
+.bg-index::before {
+    background-image: url('https://images.unsplash.com/photo-1549692520-acc6669e2f0c?q=80&w=2000&auto=format&fit=crop');
+    /* Programming books / study setup */
+}
+
+.bg-courses::before {
+    background-image: url('https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=2000&auto=format&fit=crop');
+    /* Library books close up */
+}
+
+.bg-articles::before {
+    background-image: url('https://images.unsplash.com/photo-1457369804613-52c61a468e7d?q=80&w=2000&auto=format&fit=crop');
+    /* Open book with text */
+}
+
+.bg-quizzes::before {
+    background-image: url('https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=2000&auto=format&fit=crop');
+    /* Desk with notebook and pen */
+}
+
+.bg-contact::before {
+    background-image: url('https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2000&auto=format&fit=crop');
+    /* Modern office / reception */
+}
+
+.category-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #d4af37;
+    padding-bottom: 15px;
+    margin-bottom: 40px;
+    font-size: 2rem;
+    color: #fff;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 10px rgba(212, 175, 55, 0.3);
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 35px;
+}
+
+/* بطاقة الكورس الجديدة */
+.product {
+    background: linear-gradient(145deg, #1c1c1c, #141414);
+    border-radius: 24px;
+    overflow: hidden;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.product::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 24px;
+    padding: 2px;
+    background: linear-gradient(45deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.5s;
+    pointer-events: none;
+    /* يمنع التداخل مع الأزرار */
+}
+
+.product:hover {
+    transform: translateY(-15px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 20px rgba(212, 175, 55, 0.1);
+}
+
+.product:hover::before {
+    opacity: 1;
+}
+
+.product-image-container {
+    width: 100%;
+    height: 220px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.product img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.product:hover img {
+    transform: scale(1.15) rotate(2deg);
+}
+
+.product-info {
+    padding: 25px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.product-name {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 12px;
+    line-height: 1.4;
+    transition: color 0.3s;
+}
+
+.product:hover .product-name {
+    color: #d4af37;
+}
+
+.product-price {
+    font-size: 1.2rem;
+    color: #d4af37;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.product-price::before {
+    content: "💳";
+    font-size: 1rem;
+}
+
+.product-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.product-actions button {
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    font-family: 'Cairo', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    border: none;
+    letter-spacing: 0.5px;
+}
+
+.btn-buy-now {
+    width: 100%;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: #fff;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 8px 15px rgba(37, 211, 102, 0.3);
+}
+
+.btn-buy-now:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px rgba(37, 211, 102, 0.5);
+    background: linear-gradient(135deg, #2ae06c, #149c8c);
+}
+
+.btn-details {
+    width: 100%;
+    background: transparent;
+    color: #d4af37;
+    border: 2px solid #d4af37 !important;
+    margin-top: 10px;
+}
+
+.btn-details:hover {
+    background: #d4af37;
+    color: #111;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(212, 175, 55, 0.3);
+}
+
+.admin-actions-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.btn-edit {
+    flex: 1;
+    background: #333;
+    color: #fff;
+}
+
+.btn-edit:hover {
+    background: #444;
+}
+
+.btn-delete {
+    flex: 1;
+    background: #e63946;
+    color: #fff;
+}
+
+.btn-delete:hover {
+    background: #ff4d5a;
+}
+
+/* زر واتساب العائم المحسن */
+.whatsapp-float {
+    position: fixed;
+    bottom: 35px;
+    left: 35px;
+    width: 65px;
+    height: 65px;
+    background: linear-gradient(135deg, #25d366, #128c7e);
+    color: #FFF;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 32px;
+    box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.15) rotate(10deg);
+    box-shadow: 0 12px 35px rgba(37, 211, 102, 0.6);
+}
+
+.whatsapp-float::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #25d366;
+    z-index: -1;
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+    }
+
+    70% {
+        transform: scale(1.2);
+        box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+    }
+}
+
+/* =========================================
+   مودال تفاصيل الكورس (المحترف)
+========================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #111;
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.9), 0 0 40px rgba(212, 175, 55, 0.1);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 650px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: modalPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes modalPop {
+    0% {
+        transform: scale(0.8) translateY(30px);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 25px 30px;
+    border-bottom: 2px solid rgba(212, 175, 55, 0.2);
+    background: rgba(20, 20, 20, 0.95);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-title {
+    margin: 0;
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.close-modal {
+    background: transparent !important;
+    border: none !important;
+    color: #a0a0a0 !important;
+    font-size: 1.8rem !important;
+    cursor: pointer;
+    transition: color 0.3s !important;
+    padding: 0 !important;
+}
+
+.close-modal:hover {
+    color: #e63946 !important;
+}
+
+#modalBody {
+    padding: 30px;
+    color: #ccc;
+    font-size: 1.1rem;
+    line-height: 1.8;
+}
+
+.video-preview {
+    border: 2px solid rgba(212, 175, 55, 0.2);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    height: 300px;
+    background-size: cover;
+    background-position: center;
+    border-radius: 16px;
+    cursor: pointer;
+    margin-bottom: 25px;
+    transition: transform 0.3s;
+}
+
+.video-preview:hover {
+    transform: scale(1.02);
+    border-color: rgba(212, 175, 55, 0.5);
+}
+
+
+/* أزرار السلة والتحكم */
+button {
+    border-radius: 12px !important;
+}
+
+#adminPanel {
+    background: #111;
+    border: 1px dashed #333;
+}
+
+/* =========================================
+   تنسيقات المقالات (Articles)
+========================================= */
+.articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 30px;
+    margin-top: 30px;
+}
+
+.article-card {
+    background: linear-gradient(145deg, #181818, #111111);
+    border: 1px solid rgba(212, 175, 55, 0.15);
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+}
+
+.article-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #d4af37, transparent);
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+.article-card:hover {
+    transform: translateY(-10px);
+    border-color: rgba(212, 175, 55, 0.4);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8), 0 0 15px rgba(212, 175, 55, 0.1);
+}
+
+.article-card:hover::before {
+    opacity: 1;
+}
+
+.article-title {
+    color: #d4af37;
+    font-size: 1.6rem;
+    margin-bottom: 20px;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+    padding-bottom: 15px;
+}
+
+.article-content {
+    color: #ccc;
+    line-height: 1.8;
+    font-size: 1.05rem;
+}
+
+/* =========================================
+   تنسيقات التدريبات والاختبارات (Quizzes)
+========================================= */
+.quizzes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 35px;
+    margin-top: 30px;
+}
+
+.quiz-card {
+    background: linear-gradient(145deg, #151515, #0a0a0a);
+    padding: 35px;
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.quiz-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.7);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+.quiz-question {
+    color: #fff;
+    font-size: 1.4rem;
+    margin-bottom: 25px;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.quiz-question::before {
+    content: "❓";
+    font-size: 1.5rem;
+}
+
+.quiz-textarea {
+    width: 100%;
+    border-radius: 12px;
+    padding: 15px;
+    background: #080808;
+    color: #fff;
+    border: 1px solid #333;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1rem;
+    min-height: 120px;
+    resize: vertical;
+    transition: all 0.3s;
+    margin-bottom: 20px;
+}
+
+.quiz-textarea:focus {
+    outline: none;
+    border-color: #d4af37;
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.2);
+    background: #111;
+}
+
+.btn-send-answer {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Cairo', sans-serif;
+    font-size: 1.1rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #25D366, #128c7e);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.btn-send-answer:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 20px rgba(37, 211, 102, 0.4);
+}

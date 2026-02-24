@@ -12,8 +12,19 @@ const db = firebase.firestore();
 
 let products = []; // سيتم جلبها من Firestore
 let categoriesList = []; // سيتم جلبها من Firestore
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-let admin = false; // يتم الدخول فقط بكلمة المرور ولا يحفظ عند التحديث
+
+// فحص إعادة تحميل الصفحة (Refresh)
+const navEntries = performance.getEntriesByType("navigation");
+if (navEntries.length > 0 && navEntries[0].type === "reload") {
+    sessionStorage.removeItem("isAdmin");
+}
+
+let admin = sessionStorage.getItem("isAdmin") === "true";
+let articles = [];
+let quizzes = [];
+
+// رقم واتساب المسجل
+const WHATSAPP_NUMBER = "201128131379";
 
 // جلب التصنيفات من Firestore في الوقت الفعلي
 db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
@@ -23,6 +34,8 @@ db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) =>
     } else {
         categoriesList = snapshot.docs.map(doc => doc.data().name);
         render();
+        if (typeof renderArticles === 'function') renderArticles();
+        if (typeof renderQuizzes === 'function') renderQuizzes();
     }
 });
 
@@ -30,6 +43,18 @@ db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) =>
 db.collection("products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
     products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), image: doc.data().imageUrl }));
     render();
+});
+
+// جلب المقالات
+db.collection("articles").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    articles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (typeof renderArticles === 'function') renderArticles();
+});
+
+// جلب التدريبات
+db.collection("quizzes").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    quizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (typeof renderQuizzes === 'function') renderQuizzes();
 });
 
 // دوال الحفظ في المتصفح
@@ -81,7 +106,6 @@ function render() {
     let box = document.getElementById("products");
     let selectBox = document.getElementById("categorySelect");
 
-    // تحديث قائمة الاختيار (dropdown) لإضافة الكورس
     if (selectBox) {
         selectBox.innerHTML = "";
         categoriesList.forEach(c => {
@@ -89,36 +113,60 @@ function render() {
         });
     }
 
-    if (!box) return; // تأكد أننا في صفحة الكورسات
+    injectWhatsAppButton();
+    if (!box) return;
     box.innerHTML = "";
 
-    // عرض كل تصنيف
-    categoriesList.forEach(cat => {
-        let catProducts = products.map((p, i) => ({ product: p, index: i })).filter(item => item.product.category === cat);
+    const sortedCategories = [...categoriesList].sort();
+
+    sortedCategories.forEach(cat => {
+        let catProducts = products
+            .filter(p => p.category === cat)
+            .sort((a, b) => a.price - b.price);
+
+        let productsWithIndices = catProducts.map(p => {
+            const originalIndex = products.findIndex(item => item.id === p.id);
+            return { product: p, index: originalIndex };
+        });
 
         let catHTML = `
         <div class="category-section">
-            <h2 class="category-title" style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 class="category-title">
                 <span>${cat}</span>
                 ${admin && cat !== "كورسات عامة" ? `<button onclick="delCategory('${cat}')" style="background:transparent; color:#e63946; border:none; padding:0; margin:0; box-shadow:none; font-size:1.2rem;" title="حذف التصنيف">✖</button>` : ""}
             </h2>
             <div class="category-grid">
         `;
 
-        if (catProducts.length === 0) {
-            catHTML += `<p style="color:#777; grid-column: 1 / -1;">لا توجد كورسات في هذا التصنيف حالياً.</p>`;
+        if (productsWithIndices.length === 0) {
+            catHTML += `<p style="color:#777; grid-column: 1 / -1; text-align:center;">لا توجد كورسات في هذا التصنيف حالياً.</p>`;
         } else {
-            catProducts.forEach(item => {
+            productsWithIndices.forEach(item => {
                 let p = item.product;
                 let i = item.index;
+
                 catHTML += `
                 <div class="product">
-                    <img src="${p.image}" alt="${p.name}">
-                    <h3 style="color:#fff; margin-bottom:5px;">${p.name}</h3>
-                    <p style="color: #d4af37; font-weight:bold; font-size:1.1rem; margin-bottom:5px;">السعر: ${p.price} جنيه</p>
-                    <div style="margin-top: 15px;">
-                        <button id="add-btn-${i}" onclick="addCart(${i})" style="width:100%;">إضافة للسلة</button>
-                        ${admin ? `<button onclick="del(${i})" style="background: linear-gradient(135deg, #e63946, #b02a35); color: #fff; width:100%; margin-top:5px;">حذف الكورس</button>` : ""}
+                    <div class="product-image-container" onclick="showProductDetails(${i})">
+                        <img src="${p.image}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/300x200?text=Course+Image'">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name" onclick="showProductDetails(${i})" style="cursor:pointer;">${p.name}</h3>
+                        <p class="product-price">${p.price} جنيه</p>
+                        <div class="product-actions" id="actions-${i}">
+                            <button class="btn-buy-now" onclick="buyNow(${i})">
+                                <i class="fab fa-whatsapp" style="font-size:1.4rem;"></i> إتمام الشراء
+                            </button>
+                            <button class="btn-details" onclick="showProductDetails(${i})">
+                                التفاصيل والنبذة
+                            </button>
+                            ${admin ? `
+                                <div class="admin-actions-group">
+                                    <button class="btn-edit" onclick="editCoursePrompt(${i})">تعديل</button>
+                                    <button class="btn-delete" onclick="del(${i})">حذف</button>
+                                </div>
+                            ` : ""}
+                        </div>
                     </div>
                 </div>`;
             });
@@ -128,15 +176,96 @@ function render() {
         box.innerHTML += catHTML;
     });
 
-    // إظهار لوحة التحكم إذا كان المستخدم أدمن
     let panel = document.getElementById("adminPanel");
     if (admin && panel) panel.style.display = "block";
+    else if (panel) panel.style.display = "none";
 
     updateCartCount();
+    injectWhatsAppButton();
+}
+
+function injectWhatsAppButton() {
+    if (document.querySelector('.whatsapp-float')) return;
+    const waBtn = document.createElement('a');
+    waBtn.href = `https://wa.me/${WHATSAPP_NUMBER}`;
+    waBtn.className = 'whatsapp-float';
+    waBtn.target = '_blank';
+    waBtn.innerHTML = '<i class="fab fa-whatsapp"></i>';
+    document.body.appendChild(waBtn);
+}
+
+function showProductDetails(index) {
+    const p = products[index];
+    const modal = document.getElementById('detailsModal');
+    const title = document.getElementById('modalTitle');
+    const content = document.getElementById('modalBody');
+
+    title.innerText = p.name;
+
+    let descriptionHTML = `
+        <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px;">
+            <h2 style="color: #fff; margin-bottom: 5px;">${p.name}</h2>
+            <p style="color: #d4af37; font-weight: bold; font-size: 1.2rem; margin: 0;">السعر: ${p.price} جنيه</p>
+        </div>
+        <div class="course-description-text">${p.description || "لا يوجد وصف متوفر لهذا الكورس."}</div>
+    `;
+
+    // فحص روابط يوتيوب
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?([^ &?]+)/;
+    const match = p.description ? p.description.match(youtubeRegex) : null;
+
+    if (match && match[1]) {
+        const videoId = match[1];
+        const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+        descriptionHTML = `
+            <div class="video-preview" style="background-image: url('${thumbUrl}')" onclick="window.open('${videoUrl}', '_blank')">
+                <div style="background: rgba(0,0,0,0.4); width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:12px;">
+                    <i class="fab fa-youtube" style="color: #ff0000; font-size: 4rem;"></i>
+                </div>
+            </div>
+            ${descriptionHTML}
+        `;
+    }
+
+    content.innerHTML = descriptionHTML;
+    modal.style.display = 'flex';
+}
+
+function closeModal() {
+    document.getElementById('detailsModal').style.display = 'none';
+}
+
+function buyNow(index) {
+    const p = products[index];
+    const msg = `مرحباً يا أستاذ إسلام، أريد شراء كورس: ${p.name}\nالسعر: ${p.price} جنيه`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+async function editCoursePrompt(index) {
+    const p = products[index];
+    const newName = prompt("اسم الكورس:", p.name);
+    const newPrice = prompt("السعر:", p.price);
+    const newDesc = prompt("وصف الكورس (يمكن وضع رابط يوتيوب هنا):", p.description || "");
+
+    if (newName && newPrice) {
+        try {
+            await db.collection("products").doc(p.id).update({
+                name: newName,
+                price: parseFloat(newPrice),
+                description: newDesc
+            });
+            alert("تم التعديل بنجاح");
+        } catch (e) {
+            alert("خطأ في التعديل: " + e.message);
+        }
+    }
 }
 
 // تشغيل عرض الكورسات عند فتح الصفحة
 render();
+injectWhatsAppButton();
 
 // دالة رفع الصورة إلى Cloudinary
 async function uploadImageToCloudinary(file) {
@@ -182,8 +311,8 @@ async function addCourse() {
         await db.collection("products").add({
             name: name,
             price: parseFloat(price),
-            category: category, // للحفاظ على نظام التصنيفات الحالي
-            description: "",   // كما هو مطلوب في الهيكل
+            category: category,
+            description: document.getElementById("desc") ? document.getElementById("desc").value.trim() : "",
             imageUrl: imageUrl,
             createdAt: new Date()
         });
@@ -227,92 +356,12 @@ async function del(idOrIndex) {
     }
 }
 
-// ================== السلة (Cart) ==================
+// ================== العمليات ==================
 
-function addCart(i) {
-    cart.push(products[i]);
-    saveCart();
-    updateCartCount();
-
-    // إظهار رسالة سريعة بدلاً من alert المزعج
-    let btn = document.getElementById(`add-btn-${i}`);
-    if (btn) {
-        let originalText = btn.innerText;
-        btn.innerText = "✓ تمت الإضافة";
-        btn.style.background = "linear-gradient(135deg, #25D366, #1da851)"; /* green check */
-        btn.style.color = "#fff";
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.background = ""; /* resort to CSS class styling */
-            btn.style.color = "";
-        }, 1500);
-    }
-}
-
-function updateCartCount() {
-    let countBadge = document.getElementById("cartCount");
-    if (countBadge) {
-        countBadge.innerText = cart.length;
-        countBadge.style.display = cart.length > 0 ? "inline-block" : "none";
-    }
-}
-
-function toggleCart() {
-    let c = document.getElementById("cartBox");
-    if (c) {
-        c.style.display = c.style.display == "block" ? "none" : "block";
-        if (c.style.display == "block") renderCart();
-    }
-}
-
-function renderCart() {
-    let b = document.getElementById("cartItems");
-    let totalEl = document.getElementById("cartTotal");
-    if (!b) return;
-
-    b.innerHTML = "";
-    let total = 0;
-
-    if (cart.length === 0) {
-        b.innerHTML = '<p style="text-align: center; color: #777; font-size: 0.9rem;">السلة فارغة حالياً</p>';
-    }
-
-    cart.forEach((p, i) => {
-        total += Number(p.price) || 0;
-        b.innerHTML += `
-        <div class="cart-item" style="align-items:center;">
-            <div style="flex:1;">
-                <div style="font-weight:bold; font-size:0.9rem; color:#fff;">${p.name}</div>
-                <div style="color:#d4af37; font-size:0.8rem;">${p.price} جنيه</div>
-            </div>
-            <button onclick="remove(${i})" style="background:#e63946; color:#fff; padding:4px 8px; margin-top:0; border-radius:50%; width:30px; height:30px; display:flex; justify-content:center; align-items:center; box-shadow:none;">✖</button>
-        </div>`;
-    });
-
-    if (totalEl) totalEl.innerText = total + " جنيه";
-}
-
-function remove(i) {
-    cart.splice(i, 1);
-    saveCart();
-    renderCart();
-    updateCartCount();
-}
-
-function checkout() {
-    if (cart.length == 0) return alert("السلة فارغة، أضف كورسات أولاً");
-
-    let msg = "مرحباً يا أستاذ إسلام، أريد شراء الكورسات التالية:\n\n";
-    let total = 0;
-
-    cart.forEach(p => {
-        msg += `📚 ${p.name} - السعر: ${p.price} جنيه\n`;
-        total += Number(p.price) || 0;
-    });
-
-    msg += `\n💳 الإجمالي: ${total} جنيه`;
-
-    window.location.href = "https://wa.me/201128131379?text=" + encodeURIComponent(msg);
+function buyNow(index) {
+    const p = products[index];
+    const msg = `مرحباً يا أستاذ إسلام، أريد شراء كورس: ${p.name}\nالسعر: ${p.price} جنيه`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
 }
 
 // ================== لوحة المدير (Admin) ==================
@@ -331,10 +380,12 @@ function login() {
     let pass = document.getElementById("adminPass").value;
     if (pass === "1357") {
         admin = true;
-        document.getElementById("loginBox").style.display = "none";
+        sessionStorage.setItem("isAdmin", "true");
         document.getElementById("loginBox").style.display = "none";
         document.getElementById("adminPass").value = "";
-        render(); // إعادة رسم الصفحة لإظهار لوحة التحكم
+        render();
+        if (typeof renderArticles === 'function') renderArticles();
+        if (typeof renderQuizzes === 'function') renderQuizzes();
     } else {
         alert("الرقم السري خاطئ!");
     }
@@ -342,7 +393,125 @@ function login() {
 
 function logout() {
     admin = false;
+    sessionStorage.removeItem("isAdmin");
     let panel = document.getElementById("adminPanel");
     if (panel) panel.style.display = "none";
-    render(); // إعادة رسم الصفحة لإخفاء أزرار الحذف
+    render();
+    if (typeof renderArticles === 'function') renderArticles();
+    if (typeof renderQuizzes === 'function') renderQuizzes();
+}
+
+// دالة إضافة مقال
+async function addArticle() {
+    const title = document.getElementById("artTitle").value.trim();
+    const content = document.getElementById("artContent").value.trim();
+    if (!title || !content) return alert("اكمل البيانات");
+
+    await db.collection("articles").add({ title, content, createdAt: new Date() });
+    document.getElementById("artTitle").value = "";
+    document.getElementById("artContent").value = "";
+    alert("تم النشر");
+}
+
+function renderArticles() {
+    const box = document.getElementById("articlesList");
+    if (!box) return;
+    box.innerHTML = "";
+
+    let panel = document.getElementById("adminPanel");
+    if (admin && panel) panel.style.display = "block";
+    else if (panel) panel.style.display = "none";
+
+    let html = `<div class="articles-grid">`;
+    articles.forEach(art => {
+        html += `
+            <div class="article-card">
+                <h2 class="article-title">${art.title}</h2>
+                <div class="article-content">${art.content.replace(/\n/g, '<br>')}</div>
+                ${admin ? `
+                    <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                        <button onclick="editArticlePrompt('${art.id}')" style="flex:1; background:#333; color:#fff; padding:10px; border-radius:8px; border:none; cursor:pointer;">تعديل</button>
+                        <button onclick="deleteArticle('${art.id}')" style="flex:1; background:#e63946; color:#fff; padding:10px; border-radius:8px; border:none; cursor:pointer;">حذف</button>
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    });
+    html += `</div>`;
+    box.innerHTML = html;
+}
+
+async function editArticlePrompt(id) {
+    const art = articles.find(a => a.id === id);
+    const newTitle = prompt("العنوان:", art.title);
+    const newContent = prompt("المحتوى:", art.content);
+    if (newTitle && newContent) {
+        await db.collection("articles").doc(id).update({ title: newTitle, content: newContent });
+        alert("تم التعديل");
+    }
+}
+
+async function deleteArticle(id) {
+    if (confirm("حذف؟")) await db.collection("articles").doc(id).delete();
+}
+
+// دالة إضافة تدريب
+async function addQuiz() {
+    const question = document.getElementById("qTitle").value.trim();
+    if (!question) return alert("اكمل البيانات");
+
+    await db.collection("quizzes").add({ question, createdAt: new Date() });
+    document.getElementById("qTitle").value = "";
+    alert("تمت الإضافة");
+}
+
+function renderQuizzes() {
+    const box = document.getElementById("quizzesList");
+    if (!box) return;
+    box.innerHTML = "";
+
+    let panel = document.getElementById("adminPanel");
+    if (admin && panel) panel.style.display = "block";
+    else if (panel) panel.style.display = "none";
+
+    let html = `<div class="quizzes-grid">`;
+    quizzes.forEach(q => {
+        html += `
+            <div class="quiz-card">
+                <div class="quiz-question">${q.question}</div>
+                <textarea id="ans-${q.id}" class="quiz-textarea" placeholder="اكتب إجابتك هنا بوضوح..."></textarea>
+                <button onclick="sendAnswer('${q.id}', '${q.question.replace(/'/g, "\\'")}')" class="btn-send-answer">
+                    <i class="fab fa-whatsapp" style="font-size:1.4rem;"></i> إرسال الإجابة (واتساب)
+                </button>
+                ${admin ? `
+                    <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
+                        <button onclick="editQuizPrompt('${q.id}')" style="flex:1; background:#333; color:#fff; padding:10px; border-radius:8px; border:none; cursor:pointer;">تعديل</button>
+                        <button onclick="deleteQuiz('${q.id}')" style="flex:1; background:#e63946; color:#fff; padding:10px; border-radius:8px; border:none; cursor:pointer;">حذف</button>
+                    </div>
+                ` : ""}
+            </div>
+        `;
+    });
+    html += `</div>`;
+    box.innerHTML = html;
+}
+
+async function editQuizPrompt(id) {
+    const q = quizzes.find(item => item.id === id);
+    const newQ = prompt("السؤال:", q.question);
+    if (newQ) {
+        await db.collection("quizzes").doc(id).update({ question: newQ });
+        alert("تم التعديل");
+    }
+}
+
+function sendAnswer(id, question) {
+    const ans = document.getElementById(`ans-${id}`).value.trim();
+    if (!ans) return alert("اكتب الإجابة أولاً");
+    const msg = `إجابة تدريب: ${question}\n\nالإجابة:\n${ans}`;
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+async function deleteQuiz(id) {
+    if (confirm("حذف؟")) await db.collection("quizzes").doc(id).delete();
 }

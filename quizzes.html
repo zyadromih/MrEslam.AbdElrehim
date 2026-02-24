@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التدريبات والاختبارات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="extra-styles.css?v=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="bg-quizzes">
+    <header>
+        <div class="header-brand">
+            <div style="font-size: 1.5rem; font-weight: 700;">التدريبات</div>
+        </div>
+        <nav>
+            <a href="index.html">الرئيسية</a>
+            <a href="courses.html">الكورسات</a>
+            <a href="articles.html">المقالات</a>
+            <a href="quizzes.html" class="active">التدريبات</a>
+            <a href="contact.html">التواصل</a>
+        </nav>
+    </header>
+
+    <div class="container">
+
+        <div id="adminPanel" style="display:none; margin-bottom: 40px;">
+            <h3 style="color:#d4af37;">إضافة تدريب جديد</h3>
+            <textarea id="qTitle" placeholder="نص السؤال أو التدريب"
+                style="width:100%; border-radius:8px; background:#0f0f0f; color:#fff; border:1px solid #333; padding:12px; height:100px; margin-bottom:15px; font-family:'Cairo';"></textarea>
+            <button onclick="addQuiz()" style="width: 100%;">إضافة التدريب</button>
+        </div>
+
+        <div id="quizzesList">
+            <!-- جلب التدريبات -->
+        </div>
+    </div>
+
+    <!-- زر الدخول كمسؤول -->
+    <div class="admin-icon" onclick="showLogin()" title="تسجيل الدخول للإدارة">⚙️</div>
+
+    <!-- نافذة تسجيل الدخول للمسؤول -->
+    <div class="admin-login" id="loginBox">
+        <div class="admin-box">
+            <h3 style="margin-top: 0; color:#d4af37;">لوحة تحكم الأستاذ</h3>
+            <input type="password" id="adminPass" placeholder="كلمة المرور للإدارة" style="margin-top:20px;">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="login()" style="flex: 1;">دخول</button>
+                <button onclick="hideLogin()" style="flex: 1; background: #333; color: #ccc;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        window.onload = () => {
+            if (typeof renderQuizzes === 'function') renderQuizzes();
+        };
+    </script>
+</body>
+
+</html>

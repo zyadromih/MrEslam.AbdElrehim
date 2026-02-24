@@ -10,12 +10,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- ربط ملف الستايل الجديد (إصدار 3 لمنع الكاش) -->
     <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="extra-styles.css?v=1">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 
-<body>
+<body class="bg-index">
 
     <header>
         <div class="header-brand">
@@ -24,6 +25,8 @@
         <nav>
             <a href="index.html" class="active">الرئيسية</a>
             <a href="courses.html">الكورسات</a>
+            <a href="articles.html">المقالات</a>
+            <a href="quizzes.html">التدريبات</a>
             <a href="contact.html">التواصل</a>
         </nav>
     </header>
@@ -53,6 +56,34 @@
             </p>
             <br>
             <button onclick="window.location.href='courses.html'">تصفح كورسات الأستاذ</button>
+        </div>
+    </div>
+
+    <!-- مودال تفاصيل الكورس -->
+    <div id="detailsModal" class="modal-overlay" onclick="if(event.target==this) closeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle" class="modal-title">اسم الكورس</h3>
+                <button class="close-modal" onclick="closeModal()">✖</button>
+            </div>
+            <div id="modalBody">
+                <!-- الوصف وفيديو يوتيوب -->
+            </div>
+        </div>
+    </div>
+
+    <!-- زر الدخول كمسؤول -->
+    <div class="admin-icon" onclick="showLogin()" title="تسجيل الدخول للإدارة">⚙️</div>
+
+    <!-- نافذة تسجيل الدخول للمسؤول -->
+    <div class="admin-login" id="loginBox">
+        <div class="admin-box">
+            <h3 style="margin-top: 0; color:#d4af37;">لوحة تحكم الأستاذ</h3>
+            <input type="password" id="adminPass" placeholder="كلمة المرور للإدارة" style="margin-top:20px;">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="login()" style="flex: 1;">دخول</button>
+                <button onclick="hideLogin()" style="flex: 1; background: #333; color: #ccc;">إلغاء</button>
+            </div>
         </div>
     </div>
 

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>المقالات</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=3">
+    <link rel="stylesheet" href="extra-styles.css?v=1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="bg-articles">
+    <header>
+        <div class="header-brand">
+            <div style="font-size: 1.5rem; font-weight: 700;">المقالات</div>
+        </div>
+        <nav>
+            <a href="index.html">الرئيسية</a>
+            <a href="courses.html">الكورسات</a>
+            <a href="articles.html" class="active">المقالات</a>
+            <a href="quizzes.html">التدريبات</a>
+            <a href="contact.html">التواصل</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div id="adminPanel" style="display:none; margin-bottom: 40px;">
+            <h3 style="color:#d4af37;">إضافة مقال جديد</h3>
+            <input id="artTitle" placeholder="عنوان المقال">
+            <textarea id="artContent" placeholder="محتوى المقال"
+                style="width:100%; border-radius:8px; background:#0f0f0f; color:#fff; border:1px solid #333; padding:12px; height:200px; margin-bottom:15px; font-family:'Cairo';"></textarea>
+            <button onclick="addArticle()" style="width: 100%;">نشر المقال</button>
+        </div>
+
+        <div id="articlesList">
+            <!-- جلب المقالات -->
+        </div>
+    </div>
+
+    <!-- زر الدخول كمسؤول -->
+    <div class="admin-icon" onclick="showLogin()" title="تسجيل الدخول للإدارة">⚙️</div>
+
+    <!-- نافذة تسجيل الدخول للمسؤول -->
+    <div class="admin-login" id="loginBox">
+        <div class="admin-box">
+            <h3 style="margin-top: 0; color:#d4af37;">لوحة تحكم الأستاذ</h3>
+            <input type="password" id="adminPass" placeholder="كلمة المرور للإدارة" style="margin-top:20px;">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button onclick="login()" style="flex: 1;">دخول</button>
+                <button onclick="hideLogin()" style="flex: 1; background: #333; color: #ccc;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // دالة مخصصة لصفحة المقالات
+        window.onload = () => {
+            if (typeof renderArticles === 'function') renderArticles();
+        };
+    </script>
+</body>
+
+</html>
