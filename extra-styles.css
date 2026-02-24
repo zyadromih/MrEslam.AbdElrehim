@@ -569,3 +569,135 @@ button {
     transform: translateY(-3px);
     box-shadow: 0 10px 20px rgba(37, 211, 102, 0.4);
 }
+
+/* =========================================
+   تحسينات مخصصة للهاتف (Mobile Optimizations)
+========================================= */
+@media (max-width: 768px) {
+
+    /* 1. إخفاء أي كتابات أو لوجو في الهيدر (فقط الإبقاء على روابط الصفحات) */
+    .header-brand {
+        display: none !important;
+    }
+
+    /* 2. تحويل الهيدر إلى شريط تنقل سفلي حديث (Bottom Navigation Bar) */
+    header {
+        position: fixed;
+        bottom: 0;
+        top: auto;
+        left: 0;
+        right: 0;
+        padding: 10px 5px;
+        background: rgba(12, 12, 12, 0.95);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border-top: 1px solid rgba(212, 175, 55, 0.2);
+        border-bottom: none;
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
+        border-top-left-radius: 20px;
+        border-top-right-radius: 20px;
+        z-index: 10000;
+        justify-content: center;
+    }
+
+    nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* 3. تنسيق أزرار الصفحات */
+    nav a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+        padding: 8px 0;
+        margin: 0;
+        flex: 1;
+        color: #888;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        gap: 6px;
+    }
+
+    /* إضافة أيقونات ديناميكية لكل صفحة */
+    nav a[href="index.html"]::before {
+        content: "\f015";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        font-size: 1.3rem;
+    }
+
+    nav a[href="courses.html"]::before {
+        content: "\f5da";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        font-size: 1.3rem;
+    }
+
+    nav a[href="articles.html"]::before {
+        content: "\f1ea";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        font-size: 1.3rem;
+    }
+
+    nav a[href="quizzes.html"]::before {
+        content: "\f058";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        font-size: 1.3rem;
+    }
+
+    nav a[href="contact.html"]::before {
+        content: "\f095";
+        font-family: "Font Awesome 6 Free";
+        font-weight: 900;
+        font-size: 1.3rem;
+    }
+
+    nav a.active {
+        color: #d4af37;
+        background: transparent;
+        transform: translateY(-5px);
+    }
+
+    nav a.active::before {
+        text-shadow: 0 0 15px rgba(212, 175, 55, 0.6);
+    }
+
+    /* 4. إبعاد المحتوى عن الشريط السفلي */
+    .container {
+        padding-top: 20px !important;
+        padding-bottom: 100px !important;
+    }
+
+    /* 5. تحسين الأزرار وأحجام الخطوط على الموبايل */
+    .hero-card h1 {
+        font-size: 1.8rem;
+    }
+
+    .category-grid,
+    .articles-grid,
+    .quizzes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-icon {
+        bottom: 90px;
+        /* ليرتفع فوق النفيجيشن السفلي */
+        right: 20px;
+    }
+
+    .whatsapp-float {
+        bottom: 90px;
+        /* ليرتفع فوق النفيجيشن السفلي */
+        left: 20px;
+    }
+}
