@@ -202,32 +202,39 @@ function showProductDetails(index) {
 
     title.innerText = p.name;
 
+    let descriptionText = p.description || "لا يوجد وصف متوفر لهذا الكورس.";
+
+    // استخراج معرّف يوتيوب للصورة
+    const ytIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
+    const matchId = descriptionText.match(ytIdRegex);
+    let videoHTML = "";
+
+    if (matchId && matchId[1]) {
+        const videoId = matchId[1];
+        const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+
+        // إزالة أي رابط يوتيوب داخل النص تماماً
+        const urlToRemoveRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/[^\s]+/g;
+        descriptionText = descriptionText.replace(urlToRemoveRegex, "").trim();
+
+        videoHTML = `
+            <div class="video-preview" style="background-image: url('${thumbUrl}'); background-size: cover; background-position: center; width: 100%; height: 200px; border-radius: 12px; cursor: pointer; margin-bottom: 15px;" onclick="window.open('${videoUrl}', '_blank')">
+                <div style="background: rgba(0,0,0,0.4); width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:12px;">
+                    <i class="fab fa-youtube" style="color: #ff0000; font-size: 4rem;"></i>
+                </div>
+            </div>
+        `;
+    }
+
     let descriptionHTML = `
         <div style="margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px;">
             <h2 style="color: #fff; margin-bottom: 5px;">${p.name}</h2>
             <p style="color: #d4af37; font-weight: bold; font-size: 1.2rem; margin: 0;">السعر: ${p.price} جنيه</p>
         </div>
-        <div class="course-description-text">${p.description || "لا يوجد وصف متوفر لهذا الكورس."}</div>
+        ${videoHTML}
+        <div class="course-description-text" style="white-space: pre-wrap; line-height: 1.8;">${descriptionText}</div>
     `;
-
-    // فحص روابط يوتيوب
-    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?([^ &?]+)/;
-    const match = p.description ? p.description.match(youtubeRegex) : null;
-
-    if (match && match[1]) {
-        const videoId = match[1];
-        const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-
-        descriptionHTML = `
-            <div class="video-preview" style="background-image: url('${thumbUrl}')" onclick="window.open('${videoUrl}', '_blank')">
-                <div style="background: rgba(0,0,0,0.4); width:100%; height:100%; display:flex; align-items:center; justify-content:center; border-radius:12px;">
-                    <i class="fab fa-youtube" style="color: #ff0000; font-size: 4rem;"></i>
-                </div>
-            </div>
-            ${descriptionHTML}
-        `;
-    }
 
     content.innerHTML = descriptionHTML;
     modal.style.display = 'flex';
@@ -423,11 +430,17 @@ function renderArticles() {
     else if (panel) panel.style.display = "none";
 
     let html = `<div class="articles-grid">`;
-    articles.forEach(art => {
+    articles.forEach((art, i) => {
+        // نستخدم index لتكون المعرفات فريدة بشكل مؤكد في حال كان id غير متاح أو متطابق
         html += `
-            <div class="article-card">
-                <h2 class="article-title">${art.title}</h2>
-                <div class="article-content">${art.content.replace(/\n/g, '<br>')}</div>
+            <div class="article-card" style="padding-bottom: 5px;">
+                <h2 class="article-title" onclick="toggleArticle(${i})" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    ${art.title}
+                    <i class="fas fa-chevron-down" id="icon-${i}" style="transition: transform 0.3s; pointer-events: none;"></i>
+                </h2>
+                <div class="article-content" id="content-${i}" style="display: none; padding-top: 10px; margin-bottom: 15px;">
+                    ${art.content.replace(/\n/g, '<br>')}
+                </div>
                 ${admin ? `
                     <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
                         <button onclick="editArticlePrompt('${art.id}')" style="flex:1; background:#333; color:#fff; padding:10px; border-radius:8px; border:none; cursor:pointer;">تعديل</button>
@@ -439,6 +452,29 @@ function renderArticles() {
     });
     html += `</div>`;
     box.innerHTML = html;
+}
+
+function toggleArticle(id) {
+    // إغلاق باقي المقالات (Accordion behavior)
+    articles.forEach((art, i) => {
+        if (i !== id) {
+            const otherContent = document.getElementById(`content-${i}`);
+            const otherIcon = document.getElementById(`icon-${i}`);
+            if (otherContent) otherContent.style.display = "none";
+            if (otherIcon) otherIcon.style.transform = "rotate(0deg)";
+        }
+    });
+
+    const content = document.getElementById(`content-${id}`);
+    const icon = document.getElementById(`icon-${id}`);
+
+    if (content.style.display === "none" || content.style.display === "") {
+        content.style.display = "block";
+        icon.style.transform = "rotate(180deg)";
+    } else {
+        content.style.display = "none";
+        icon.style.transform = "rotate(0deg)";
+    }
 }
 
 async function editArticlePrompt(id) {
@@ -458,14 +494,35 @@ async function deleteArticle(id) {
 // دالة إضافة تدريب
 async function addQuiz() {
     const question = document.getElementById("qTitle").value.trim();
+    const timerInput = document.getElementById("qTimer") ? document.getElementById("qTimer").value : "";
+    const linkInput = document.getElementById("qLink") ? document.getElementById("qLink").value.trim() : "";
+
     if (!question) return alert("اكمل البيانات");
 
-    await db.collection("quizzes").add({ question, createdAt: new Date() });
+    let expirationTime = null;
+    if (timerInput && parseInt(timerInput) > 0) {
+        expirationTime = new Date().getTime() + (parseInt(timerInput) * 60000);
+    }
+
+    await db.collection("quizzes").add({
+        question,
+        expirationTime,
+        link: linkInput,
+        createdAt: new Date()
+    });
+
     document.getElementById("qTitle").value = "";
+    if (document.getElementById("qTimer")) document.getElementById("qTimer").value = "";
+    if (document.getElementById("qLink")) document.getElementById("qLink").value = "";
     alert("تمت الإضافة");
 }
 
+let quizTimers = {};
+
 function renderQuizzes() {
+    Object.values(quizTimers).forEach(clearInterval);
+    quizTimers = {};
+
     const box = document.getElementById("quizzesList");
     if (!box) return;
     box.innerHTML = "";
@@ -475,10 +532,44 @@ function renderQuizzes() {
     else if (panel) panel.style.display = "none";
 
     let html = `<div class="quizzes-grid">`;
+    const now = new Date().getTime();
+
     quizzes.forEach(q => {
+        if (q.expirationTime && q.expirationTime < now) {
+            deleteQuizWithoutPrompt(q.id);
+            return;
+        }
+
+        let linkHtml = '';
+        if (q.link) {
+            linkHtml = `<a href="${q.link}" target="_blank" style="display:block; margin-bottom:15px; color:#d4af37; text-decoration:underline;">▶ رابط التدريب أو الاختبار</a>`;
+        }
+
+        let timerHtml = '';
+        if (q.expirationTime) {
+            timerHtml = `<div id="timer-${q.id}" style="color: #ff4c4c; font-weight: bold; margin-bottom: 10px; background: rgba(255,0,0,0.1); padding: 5px; border-radius: 5px; text-align: center;">جاري حساب الوقت...</div>`;
+
+            quizTimers[q.id] = setInterval(() => {
+                const currentTime = new Date().getTime();
+                const distance = q.expirationTime - currentTime;
+
+                if (distance <= 0) {
+                    clearInterval(quizTimers[q.id]);
+                    deleteQuizWithoutPrompt(q.id);
+                } else {
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                    const el = document.getElementById(`timer-${q.id}`);
+                    if (el) el.innerText = `⏳ متبقي: ${minutes}د و ${seconds}ث`;
+                }
+            }, 1000);
+        }
+
         html += `
-            <div class="quiz-card">
+            <div class="quiz-card" id="quiz-card-${q.id}">
+                ${timerHtml}
                 <div class="quiz-question">${q.question}</div>
+                ${linkHtml}
                 <textarea id="ans-${q.id}" class="quiz-textarea" placeholder="اكتب إجابتك هنا بوضوح..."></textarea>
                 <button onclick="sendAnswer('${q.id}', '${q.question.replace(/'/g, "\\'")}')" class="btn-send-answer">
                     <i class="fab fa-whatsapp" style="font-size:1.4rem;"></i> إرسال الإجابة (واتساب)
@@ -494,6 +585,13 @@ function renderQuizzes() {
     });
     html += `</div>`;
     box.innerHTML = html;
+}
+
+async function deleteQuizWithoutPrompt(id) {
+    try {
+        // حذف التدريب المنتهي بدون إشعار
+        await db.collection("quizzes").doc(id).delete();
+    } catch (e) { }
 }
 
 async function editQuizPrompt(id) {
@@ -515,3 +613,34 @@ function sendAnswer(id, question) {
 async function deleteQuiz(id) {
     if (confirm("حذف؟")) await db.collection("quizzes").doc(id).delete();
 }
+
+// جعل اللصق يتم كنص فقط بدون تنسيق داخل الحقول (Textarea & ContentEditable)
+document.addEventListener('paste', function (e) {
+    if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.contentEditable !== 'true') return;
+
+    e.preventDefault();
+    let text = "";
+    if (e.clipboardData && e.clipboardData.getData) {
+        text = e.clipboardData.getData('text/plain');
+    } else if (window.clipboardData && window.clipboardData.getData) {
+        text = window.clipboardData.getData('Text');
+    }
+
+    if (document.queryCommandSupported('insertText')) {
+        document.execCommand('insertText', false, text);
+    } else {
+        // Fallback for newer browsers that removed execCommand for textareas
+        const target = e.target;
+        if (target.selectionStart !== undefined) {
+            const startPos = target.selectionStart;
+            const endPos = target.selectionEnd;
+            target.value = target.value.substring(0, startPos)
+                + text
+                + target.value.substring(endPos, target.value.length);
+            target.selectionStart = startPos + text.length;
+            target.selectionEnd = startPos + text.length;
+        } else {
+            target.value += text;
+        }
+    }
+});
