@@ -57,6 +57,15 @@ db.collection("quizzes").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
     if (typeof renderQuizzes === 'function') renderQuizzes();
 });
 
+// دالة لتحويل الروابط في النصوص إلى روابط قابلة للضغط
+function linkify(text) {
+    if (!text) return text;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, function (url) {
+        return `<a href="${url}" target="_blank" style="color: #d4af37; text-decoration: underline;">${url}</a>`;
+    });
+}
+
 // دوال الحفظ في المتصفح
 function save() { localStorage.setItem("products", JSON.stringify(products)) }
 function saveCategories() { localStorage.setItem("categoriesList", JSON.stringify(categoriesList)) }
@@ -233,7 +242,7 @@ function showProductDetails(index) {
             <p style="color: #d4af37; font-weight: bold; font-size: 1.2rem; margin: 0;">السعر: ${p.price} جنيه</p>
         </div>
         ${videoHTML}
-        <div class="course-description-text" style="white-space: pre-wrap; line-height: 1.8;">${descriptionText}</div>
+        <div class="course-description-text" style="white-space: pre-wrap; line-height: 1.8;">${linkify(descriptionText)}</div>
     `;
 
     content.innerHTML = descriptionHTML;
@@ -439,7 +448,7 @@ function renderArticles() {
                     <i class="fas fa-chevron-down" id="icon-${i}" style="transition: transform 0.3s; pointer-events: none;"></i>
                 </h2>
                 <div class="article-content" id="content-${i}" style="display: none; padding-top: 10px; margin-bottom: 15px;">
-                    ${art.content.replace(/\n/g, '<br>')}
+                    ${linkify(art.content).replace(/\n/g, '<br>')}
                 </div>
                 ${admin ? `
                     <div style="margin-top:20px; display:flex; gap:10px; border-top:1px solid rgba(255,255,255,0.1); padding-top:15px;">
@@ -568,7 +577,7 @@ function renderQuizzes() {
         html += `
             <div class="quiz-card" id="quiz-card-${q.id}">
                 ${timerHtml}
-                <div class="quiz-question">${q.question}</div>
+                <div class="quiz-question">${linkify(q.question).replace(/\n/g, '<br>')}</div>
                 ${linkHtml}
                 <textarea id="ans-${q.id}" class="quiz-textarea" placeholder="اكتب إجابتك هنا بوضوح..."></textarea>
                 <button onclick="sendAnswer('${q.id}', '${q.question.replace(/'/g, "\\'")}')" class="btn-send-answer">
