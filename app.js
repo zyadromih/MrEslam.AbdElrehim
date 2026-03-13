@@ -32,7 +32,8 @@ db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) =>
         // إذا كانت القائمة فارغة تماماً عند أول تشغيل، ننشئ التصنيف الافتراضي
         db.collection("categories").add({ name: "كورسات عامة", createdAt: new Date() });
     } else {
-        categoriesList = snapshot.docs.map(doc => doc.data().name);
+        const uniqueCats = new Set(snapshot.docs.map(doc => doc.data().name));
+        categoriesList = Array.from(uniqueCats);
         render();
         if (typeof renderArticles === 'function') renderArticles();
         if (typeof renderQuizzes === 'function') renderQuizzes();
@@ -40,10 +41,29 @@ db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) =>
 });
 
 // جلب المنتجات من Firestore في الوقت الفعلي
+let courseUrlChecked = false;
 db.collection("products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
     products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), image: doc.data().imageUrl }));
     render();
+    if (!courseUrlChecked) {
+        checkUrlForCourse();
+    }
 });
+
+function checkUrlForCourse() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const courseId = urlParams.get('course');
+    if (courseId && products.length > 0) {
+        const index = products.findIndex(p => p.id === courseId);
+        if (index !== -1) {
+            showProductDetails(index);
+            courseUrlChecked = true;
+            // إزالة المتغير من الرابط لتجنب إعادة الفتح عند التحديث
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+        }
+    }
+}
 
 // جلب المقالات
 db.collection("articles").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
@@ -96,7 +116,7 @@ async function delCategory(catName) {
         alert("لا يمكن حذف هذا التصنيف لأنه يحتوي على كورسات! الرجاء حذف الكورسات التابعة له أولاً.");
         return;
     }
-    if (confirm("هل أنت متأكد من حذف هذا التصنيف؟")) {
+    if (confirm("هل أنت متأكد من حذف هذا التصنيف ( " + catName + " )؟")) {
         try {
             const query = await db.collection("categories").where("name", "==", catName).get();
             const batch = db.batch();
@@ -110,6 +130,13 @@ async function delCategory(catName) {
     }
 }
 
+async function delSelectedCategory() {
+    let catSelect = document.getElementById("deleteCategorySelect");
+    if (!catSelect || !catSelect.value) return;
+    let catName = catSelect.value;
+    await delCategory(catName);
+}
+
 // دالة عرض الكورسات
 function render() {
     let box = document.getElementById("products");
@@ -120,6 +147,25 @@ function render() {
         categoriesList.forEach(c => {
             selectBox.innerHTML += `<option value="${c}">${c}</option>`;
         });
+    }
+
+    let deleteSelectBox = document.getElementById("deleteCategorySelect");
+    if (deleteSelectBox) {
+        deleteSelectBox.innerHTML = "";
+        categoriesList.forEach(c => {
+            if (c !== "كورسات عامة") {
+                deleteSelectBox.innerHTML += `<option value="${c}">${c}</option>`;
+            }
+        });
+    }
+
+    let panel = document.getElementById("adminPanel");
+    if (admin && panel) panel.style.display = "block";
+    else if (panel) panel.style.display = "none";
+
+    let homeAdminControls = document.getElementById("homeAdminControls");
+    if (homeAdminControls) {
+        homeAdminControls.style.display = admin ? "block" : "none";
     }
 
     injectWhatsAppButton();
@@ -185,11 +231,7 @@ function render() {
         box.innerHTML += catHTML;
     });
 
-    let panel = document.getElementById("adminPanel");
-    if (admin && panel) panel.style.display = "block";
-    else if (panel) panel.style.display = "none";
-
-    updateCartCount();
+    if (typeof updateCartCount === 'function') updateCartCount();
     injectWhatsAppButton();
 }
 
@@ -242,11 +284,32 @@ function showProductDetails(index) {
             <p style="color: #d4af37; font-weight: bold; font-size: 1.2rem; margin: 0;">السعر: ${p.price} جنيه</p>
         </div>
         ${videoHTML}
-        <div class="course-description-text" style="white-space: pre-wrap; line-height: 1.8;">${linkify(descriptionText)}</div>
+        <div class="course-description-text" style="white-space: pre-wrap; line-height: 1.8; margin-bottom: 20px;">${linkify(descriptionText)}</div>
+        
+        <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #333;">
+            <input type="text" value="${getCourseLink(p.id)}" readonly id="courseLinkInput" style="flex: 1; padding: 10px; background: #000; color: #a0a0a0; border: 1px solid #444; border-radius: 6px; font-family: 'Cairo', sans-serif; direction: ltr; font-size: 0.9rem; margin-bottom: 0;">
+            <button onclick="copyCourseLink()" style="background: #333; color: #fff; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; white-space: nowrap;"><i class="fas fa-copy"></i> نسخ الرابط</button>
+        </div>
     `;
 
     content.innerHTML = descriptionHTML;
     modal.style.display = 'flex';
+}
+
+function getCourseLink(courseId) {
+    let loc = window.location;
+    let originPath = loc.origin + loc.pathname;
+    let urlDir = originPath.substring(0, originPath.lastIndexOf('/'));
+    return urlDir + "/courses.html?course=" + courseId;
+}
+
+function copyCourseLink() {
+    const input = document.getElementById('courseLinkInput');
+    if (input) {
+        input.select();
+        document.execCommand('copy');
+        alert("تم نسخ رابط الكورس بنجاح!");
+    }
 }
 
 function closeModal() {
@@ -653,3 +716,87 @@ document.addEventListener('paste', function (e) {
         }
     }
 });
+
+// ================== بيانات الصفحة الرئيسية ==================
+let homeInfo = {
+    name: "الأستاذ إسلام عبدالرحيم",
+    bio: "<p>خريج كلية دار العلوم – قسم اللغة العربية والشريعة الإسلامية، بتقدير ممتاز مع مرتبة الشرف.</p><p>خبرة أكثر من خمس سنوات في تدريس اللغة العربية للمراحل الابتدائية والإعدادية والثانوية.</p><p style=\"color: #d4af37; font-weight: 600;\">أقدم شرحًا مبسطًا وتفاعليًا يعتمد على الفهم العميق، مع كورسات متكاملة بأسلوب حديث يجعل التعلم تجربة ممتعة وسهلة.</p>",
+    image: "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).jpg"
+};
+
+// جلب معلومات الرئيسية
+db.collection("settings").doc("homeInfo").onSnapshot((doc) => {
+    if (doc.exists) {
+        homeInfo = doc.data();
+    } else {
+        db.collection("settings").doc("homeInfo").set(homeInfo);
+    }
+    renderHomeInfo();
+});
+
+function renderHomeInfo() {
+    const heroImg = document.getElementById("heroImage");
+    const heroName = document.getElementById("heroName");
+    const heroBio = document.getElementById("heroBio");
+
+    if (heroImg && homeInfo.image) heroImg.src = homeInfo.image;
+    if (heroName && homeInfo.name) heroName.innerText = homeInfo.name;
+    if (heroBio && homeInfo.bio) {
+        heroBio.innerHTML = homeInfo.bio;
+    }
+}
+
+function openEditHomeModal() {
+    // Convert <br> or html back if needed, but it's easier to just use HTML directly or strip tags for basic text 
+    // We'll let html be edited as simple text for bio
+    let bioText = homeInfo.bio.replace(/<p(.*?)>/gi, '').replace(/<\/p>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').trim();
+    document.getElementById("editHomeName").value = homeInfo.name || "";
+    document.getElementById("editHomeBio").value = bioText || "";
+    document.getElementById("editHomeImage").value = "";
+    let modal = document.getElementById("editHomeModal");
+    if (modal) modal.style.display = "flex";
+}
+
+function closeEditHomeModal() {
+    let modal = document.getElementById("editHomeModal");
+    if (modal) modal.style.display = "none";
+}
+
+async function saveHomeInfo() {
+    const name = document.getElementById("editHomeName").value.trim();
+    const bioText = document.getElementById("editHomeBio").value.trim();
+    const file = document.getElementById("editHomeImage").files[0];
+
+    if (!name || !bioText) return alert("الرجاء إدخال الاسم والنبذة");
+
+    const btn = document.getElementById("saveHomeBtn");
+    const originalText = btn.innerText;
+    btn.innerText = "جاري الحفظ...";
+    btn.disabled = true;
+
+    try {
+        let imageUrl = homeInfo.image;
+        if (file) {
+            imageUrl = await uploadImageToCloudinary(file);
+        }
+
+        let formattedBio = bioText.split('\n').filter(p => p.trim() !== '').map(p => `<p>${p}</p>`).join('');
+
+        await db.collection("settings").doc("homeInfo").set({
+            name: name,
+            bio: formattedBio,
+            image: imageUrl
+        }, { merge: true });
+
+        closeEditHomeModal();
+        alert("تم تحديث البيانات بنجاح!");
+    } catch (err) {
+        console.error(err);
+        alert("حدث خطأ: " + err.message);
+    } finally {
+        if (btn) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+}

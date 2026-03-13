@@ -32,28 +32,35 @@
     </header>
 
     <div class="container">
-        <div class="hero-card">
+        <div class="hero-card" style="position: relative;">
+            <div id="homeAdminControls" style="display: none; position: absolute; top: 15px; left: 15px; z-index: 10;">
+                <button onclick="openEditHomeModal()"
+                    style="background:#333; color:#fff; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-family:'Cairo', sans-serif;"><i
+                        class="fas fa-edit"></i> تعديل الصفحة</button>
+            </div>
 
             <div class="hero-profile-container">
                 <!-- صورة البروفايل الرئيسية الدائرية -->
-                <img src="WhatsApp Image 2026-02-21 at 7.37.11 PM (2).jpg" alt="الأستاذ إسلام عبدالرحيم"
+                <img id="heroImage" src="WhatsApp Image 2026-02-21 at 7.37.11 PM (2).jpg" alt="الأستاذ إسلام عبدالرحيم"
                     class="hero-profile-pic"
                     onerror="this.src='https://ui-avatars.com/api/?name=إسلام+عبد+الرحيم&background=d4af37&color=000&size=200&rounded=true&bold=true'">
             </div>
 
-            <h1>الأستاذ إسلام عبدالرحيم</h1>
-            <p>
-                خريج كلية دار العلوم – قسم اللغة العربية والشريعة الإسلامية،
-                بتقدير ممتاز مع مرتبة الشرف.
-            </p>
-            <p>
-                خبرة أكثر من خمس سنوات في تدريس اللغة العربية
-                للمراحل الابتدائية والإعدادية والثانوية.
-            </p>
-            <p style="color: #d4af37; font-weight: 600;">
-                أقدم شرحًا مبسطًا وتفاعليًا يعتمد على الفهم العميق،
-                مع كورسات متكاملة بأسلوب حديث يجعل التعلم تجربة ممتعة وسهلة.
-            </p>
+            <h1 id="heroName">الأستاذ إسلام عبدالرحيم</h1>
+            <div id="heroBio">
+                <p>
+                    خريج كلية دار العلوم – قسم اللغة العربية والشريعة الإسلامية،
+                    بتقدير ممتاز مع مرتبة الشرف.
+                </p>
+                <p>
+                    خبرة أكثر من خمس سنوات في تدريس اللغة العربية
+                    للمراحل الابتدائية والإعدادية والثانوية.
+                </p>
+                <p style="color: #d4af37; font-weight: 600;">
+                    أقدم شرحًا مبسطًا وتفاعليًا يعتمد على الفهم العميق،
+                    مع كورسات متكاملة بأسلوب حديث يجعل التعلم تجربة ممتعة وسهلة.
+                </p>
+            </div>
             <br>
             <button onclick="window.location.href='courses.html'">تصفح كورسات الأستاذ</button>
         </div>
@@ -83,6 +90,33 @@
             <div style="display: flex; gap: 10px; margin-top: 15px;">
                 <button onclick="login()" style="flex: 1;">دخول</button>
                 <button onclick="hideLogin()" style="flex: 1; background: #333; color: #ccc;">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تعديل الصفحة الرئيسية -->
+    <div id="editHomeModal" class="modal-overlay" onclick="if(event.target==this) closeEditHomeModal()">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title" style="color:#d4af37;">تعديل الصفحة الرئيسية</h3>
+                <button class="close-modal" onclick="closeEditHomeModal()">✖</button>
+            </div>
+            <div class="modal-body" style="padding: 20px 0; text-align: right;">
+                <label style="display:block; margin-bottom:5px; color:#ccc;">الاسم:</label>
+                <input type="text" id="editHomeName"
+                    style="width:100%; margin-bottom:15px; padding:10px; background:#0f0f0f; border:1px solid #333; color:#fff; border-radius:8px; font-family:'Cairo', sans-serif;">
+
+                <label style="display:block; margin-bottom:5px; color:#ccc;">النبذة (استخدم زر Enter لسطر جديد):</label>
+                <textarea id="editHomeBio"
+                    style="width:100%; height:150px; margin-bottom:15px; padding:10px; background:#0f0f0f; border:1px solid #333; color:#fff; border-radius:8px; font-family:'Cairo', sans-serif;"></textarea>
+
+                <label style="display:block; margin-bottom:5px; color:#ccc;">صورة شخصية جديدة (اختياري):</label>
+                <input type="file" id="editHomeImage" accept="image/*"
+                    style="width:100%; margin-bottom:20px; color:#a0a0a0; padding:10px;">
+
+                <button id="saveHomeBtn" onclick="saveHomeInfo()"
+                    style="width:100%; padding:12px; background:linear-gradient(135deg, #d4af37, #b5952f); color:#000; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">حفظ
+                    التغييرات</button>
             </div>
         </div>
     </div>
