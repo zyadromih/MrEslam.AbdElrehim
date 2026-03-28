@@ -17,11 +17,22 @@ const firebaseConfig = {
     messagingSenderId: "301861026515",
     appId: "1:301861026515:web:751865b1a873c112f5b226"
 };
-firebase.initializeApp(firebaseConfig);
 
+if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.firestore();
 
-let products = JSON.parse(localStorage.getItem("products")) || (window.initialProducts || []);
-let categoriesList = JSON.parse(localStorage.getItem("categoriesList")) || (window.initialCategories || ["كورسات عامة"]);
+let products = [];
+let categoriesList = [];
+let articles = [];
+let quizzes = [];
+
+let homeInfo = {
+    name: "الأستاذ إسلام عبدالرحيم",
+    bio: "<p>خريج كلية دار العلوم – قسم اللغة العربية والشريعة الإسلامية، بتقدير ممتاز مع مرتبة الشرف.</p><p>خبرة أكثر من خمس سنوات في تدريس اللغة العربية للمراحل الابتدائية والإعدادية والثانوية.</p><p style=\"color: #d4af37; font-weight: 600;\">أقدم شرحًا مبسطًا وتفاعليًا يعتمد على الفهم العميق، مع كورسات متكاملة بأسلوب حديث يجعل التعلم تجربة ممتعة وسهلة.</p>",
+    image: "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).jpg"
+};
 
 // فحص إعادة تحميل الصفحة (Refresh)
 const navEntries = performance.getEntriesByType("navigation");
@@ -30,28 +41,71 @@ if (navEntries.length > 0 && navEntries[0].type === "reload") {
 }
 
 let admin = sessionStorage.getItem("isAdmin") === "true";
-let articles = JSON.parse(localStorage.getItem("articles")) || [];
-let quizzes = JSON.parse(localStorage.getItem("quizzes")) || [];
-function generateId() { return Math.random().toString(36).substr(2, 9); }
-function saveArticles() { localStorage.setItem("articles", JSON.stringify(articles)); }
-function saveQuizzes() { localStorage.setItem("quizzes", JSON.stringify(quizzes)); }
-function saveHome() { localStorage.setItem("homeInfo", JSON.stringify(homeInfo)); }
-
-// رقم واتساب المسجل
 const WHATSAPP_NUMBER = "201128131379";
+let courseUrlChecked = false;
 
+// جلب التصنيفات من Firestore في الوقت الفعلي
+db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) => {
+    if (snapshot.empty) {
+        db.collection("categories").add({ name: "كورسات عامة", createdAt: new Date() });
+    } else {
+        const uniqueCats = new Set(snapshot.docs.map(doc => doc.data().name));
+        categoriesList = Array.from(uniqueCats);
+        renderAll();
+    }
+}, (error) => {
+    console.error("Firestore error:", error);
+    if(admin) alert("يوجد مشكلة في الوصول لقاعدة البيانات Firestore! يرجى التأكد من تفعيل Cloud Firestore في إعدادات Firebase وضبط الـ Rules الخاصة به.");
+});
 
-function initAppData() {
-    if (categoriesList.length === 0) categoriesList.push("كورسات عامة");
+// جلب المنتجات من Firestore في الوقت الفعلي
+db.collection("products").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), image: doc.data().imageUrl }));
     render();
-    if (typeof renderArticles === 'function') renderArticles();
-    if (typeof renderQuizzes === 'function') renderQuizzes();
     if (!courseUrlChecked) {
         checkUrlForCourse();
     }
-}
-setTimeout(initAppData, 100);
+});
 
+// جلب المقالات
+db.collection("articles").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    articles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (typeof renderArticles === 'function') renderArticles();
+});
+
+// جلب التدريبات
+db.collection("quizzes").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
+    quizzes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    if (typeof renderQuizzes === 'function') renderQuizzes();
+});
+
+function initFirebaseAuth() {
+    if (navEntries.length > 0 && navEntries[0].type === "reload") {
+        firebase.auth().signOut();
+    }
+    firebase.auth().onAuthStateChanged((user) => {
+        if (user && user.email === "islamabdalrhim7@gmail.com") {
+            if (!admin) {
+                admin = true;
+                sessionStorage.setItem("isAdmin", "true");
+                renderAll();
+            }
+        } else {
+            if (admin) {
+                admin = false;
+                sessionStorage.removeItem("isAdmin");
+                renderAll();
+            }
+        }
+    });
+}
+
+function renderAll() {
+    render();
+    if (typeof renderArticles === 'function') renderArticles();
+    if (typeof renderQuizzes === 'function') renderQuizzes();
+    renderHomeInfo();
+}
 
 function checkUrlForCourse() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -61,17 +115,13 @@ function checkUrlForCourse() {
         if (index !== -1) {
             showProductDetails(index);
             courseUrlChecked = true;
-            // إزالة المتغير من الرابط لتجنب إعادة الفتح عند التحديث
             const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
             window.history.replaceState({ path: newUrl }, '', newUrl);
         }
     }
 }
 
-
-
-
-// دالة لتحويل الروابط في النصوص إلى روابط قابلة للضغط
+// دالة لتحويل الروابط
 function linkify(text) {
     if (!text) return text;
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -80,22 +130,23 @@ function linkify(text) {
     });
 }
 
-// دوال الحفظ في المتصفح
-function save() { localStorage.setItem("products", JSON.stringify(products)) }
-function saveCategories() { localStorage.setItem("categoriesList", JSON.stringify(categoriesList)) }
-function saveCart() { localStorage.setItem("cart", JSON.stringify(cart)) }
-
 // إضافة تصنيف جديد
 async function addCategory() {
     let catName = document.getElementById("newCategoryName").value.trim();
     if (!catName) return alert("الرجاء إدخال اسم التصنيف");
     if (categoriesList.includes(catName)) return alert("هذا التصنيف موجود مسبقاً");
 
-    categoriesList.push(catName);
-    saveCategories();
-    render();
-    document.getElementById("newCategoryName").value = "";
-    alert("تم إضافة التصنيف بنجاح!");
+    try {
+        await db.collection("categories").add({
+            name: catName,
+            createdAt: new Date()
+        });
+        document.getElementById("newCategoryName").value = "";
+        alert("تم إضافة التصنيف بنجاح!");
+    } catch (error) {
+        console.error("Error adding category:", error);
+        alert("تأكد من تفعيل قواعد Firestore");
+    }
 }
 
 async function delCategory(catName) {
@@ -105,10 +156,15 @@ async function delCategory(catName) {
         return;
     }
     if (confirm("هل أنت متأكد من حذف هذا التصنيف ( " + catName + " )؟")) {
-        categoriesList = categoriesList.filter(c => c !== catName);
-        saveCategories();
-        render();
-        alert("تم حذف التصنيف.");
+        try {
+            const query = await db.collection("categories").where("name", "==", catName).get();
+            const batch = db.batch();
+            query.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert("تم حذف التصنيف.");
+        } catch (error) {
+            console.error("Error deleting category:", error);
+        }
     }
 }
 
@@ -234,10 +290,7 @@ function showProductDetails(index) {
     const content = document.getElementById('modalBody');
 
     title.innerText = p.name;
-
     let descriptionText = p.description || "لا يوجد وصف متوفر لهذا الكورس.";
-
-    // استخراج معرّف يوتيوب للصورة
     const ytIdRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i;
     const matchId = descriptionText.match(ytIdRegex);
     let videoHTML = "";
@@ -246,8 +299,6 @@ function showProductDetails(index) {
         const videoId = matchId[1];
         const thumbUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
         const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-
-        // إزالة أي رابط يوتيوب داخل النص تماماً
         const urlToRemoveRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/[^\s]+/g;
         descriptionText = descriptionText.replace(urlToRemoveRegex, "").trim();
 
@@ -311,18 +362,19 @@ async function editCoursePrompt(index) {
     const newDesc = prompt("وصف الكورس (يمكن وضع رابط يوتيوب هنا):", p.description || "");
 
     if (newName && newPrice) {
-        p.name = newName;
-        p.price = parseFloat(newPrice);
-        p.description = newDesc;
-        save();
-        render();
-        alert("تم التعديل بنجاح");
+        try {
+            await db.collection("products").doc(p.id).update({
+                name: newName,
+                price: parseFloat(newPrice),
+                description: newDesc
+            });
+            alert("تم التعديل بنجاح");
+        } catch (e) {
+            alert("خطأ في التعديل: " + e.message);
+        }
     }
 }
 
-// تشغيل عرض الكورسات عند فتح الصفحة
-render();
-injectWhatsAppButton();
 
 // دالة رفع الصورة إلى Cloudinary
 async function uploadImageToCloudinary(file) {
@@ -331,17 +383,9 @@ async function uploadImageToCloudinary(file) {
     formData.append("file", file);
     formData.append("upload_preset", "WebSite");
 
-    const response = await fetch(url, {
-        method: "POST",
-        body: formData
-    });
-
+    const response = await fetch(url, { method: "POST", body: formData });
     const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.error?.message || "Image upload failed");
-    }
-
+    if (!response.ok) throw new Error(data.error?.message || "Image upload failed");
     return data.secure_url;
 }
 
@@ -355,90 +399,44 @@ async function addCourse() {
     if (!name || !price || !file) return alert("الرجاء إدخال اسم الكورس والسعر واختيار صورة");
 
     try {
-        // تغيير نص الزر أثناء الرفع
         const addBtn = document.querySelector("button[onclick='addCourse()']");
         const originalText = addBtn.innerText;
         addBtn.innerText = "جاري الحفظ...";
         addBtn.disabled = true;
 
-        // 1. رفع الصورة إلى Cloudinary
         const imageUrl = await uploadImageToCloudinary(file);
 
-        // 2. حفظ البيانات في المتصفح
-        products.push({
-            id: generateId(),
+        await db.collection("products").add({
             name: name,
             price: parseFloat(price),
             category: category,
             description: document.getElementById("desc") ? document.getElementById("desc").value.trim() : "",
-            image: imageUrl,
-            createdAt: new Date().getTime()
+            imageUrl: imageUrl,
+            createdAt: new Date()
         });
-        save();
-        render();
 
-        // تفريغ الحقول بعد الإضافة
         document.getElementById("name").value = "";
         document.getElementById("price").value = "";
         document.getElementById("image").value = "";
-
         alert("تمت إضافة الكورس بنجاح!");
         addBtn.innerText = originalText;
         addBtn.disabled = false;
     } catch (error) {
-        console.error("Error adding course:", error);
-        alert("حدث خطأ أثناء الإضافة: " + error.message);
-        const addBtn = document.querySelector("button[onclick='addCourse()']");
-        addBtn.innerText = "إضافة الكورس";
-        addBtn.disabled = false;
+        alert("تأكد من تفعيل Firestore - مسار الخطأ: " + error.message);
     }
 }
 
 // دالة حذف الكورس (للمدير)
 async function del(idOrIndex) {
     if (confirm("هل أنت متأكد من حذف هذا الكورس؟")) {
-        products.splice(idOrIndex, 1);
-        save();
-        render();
-        alert("تم حذف الكورس بنجاح!");
-    }
-}
-
-// ================== العمليات ==================
-
-function buyNow(index) {
-    const p = products[index];
-    const msg = `مرحباً يا أستاذ إسلام، أريد شراء كورس: ${p.name}\nالسعر: ${p.price} جنيه`;
-    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-// ================== لوحة المدير (Admin) ==================
-
-function initFirebaseAuth() {
-    const navEntries = performance.getEntriesByType("navigation");
-    if (navEntries.length > 0 && navEntries[0].type === "reload") {
-        firebase.auth().signOut();
-    }
-
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user && user.email === "islamabdalrhim7@gmail.com") {
-            if (!admin) {
-                admin = true;
-                sessionStorage.setItem("isAdmin", "true");
-                render();
-                if (typeof renderArticles === 'function') renderArticles();
-                if (typeof renderQuizzes === 'function') renderQuizzes();
-            }
-        } else {
-            if (admin) {
-                admin = false;
-                sessionStorage.removeItem("isAdmin");
-                render();
-                if (typeof renderArticles === 'function') renderArticles();
-                if (typeof renderQuizzes === 'function') renderQuizzes();
-            }
+        const product = products[idOrIndex];
+        if (product && product.id) {
+            try {
+                await db.collection("products").doc(product.id).delete();
+                alert("تم حذف الكورس بنجاح!");
+            } catch (error) { }
         }
-    });
+    }
 }
 
 function showLogin() {
@@ -455,7 +453,6 @@ function login() {
     let pass = document.getElementById("adminPass").value;
     let email = "islamabdalrhim7@gmail.com";
 
-    // إيقاف الزر لتجنب التكرار
     const loginBox = document.getElementById("loginBox");
     const btns = loginBox.getElementsByTagName("button");
     const loginBtn = btns[0];
@@ -471,16 +468,13 @@ function login() {
                 sessionStorage.setItem("isAdmin", "true");
                 document.getElementById("loginBox").style.display = "none";
                 document.getElementById("adminPass").value = "";
-                render();
-                if (typeof renderArticles === 'function') renderArticles();
-                if (typeof renderQuizzes === 'function') renderQuizzes();
+                renderAll();
             } else {
                 firebase.auth().signOut();
                 alert("هذا الحساب غير مصرح له كمسؤول!");
             }
         })
         .catch((error) => {
-            console.error(error);
             alert("خطأ: " + error.message);
         })
         .finally(() => {
@@ -495,21 +489,16 @@ function logout() {
         sessionStorage.removeItem("isAdmin");
         let panel = document.getElementById("adminPanel");
         if (panel) panel.style.display = "none";
-        render();
-        if (typeof renderArticles === 'function') renderArticles();
-        if (typeof renderQuizzes === 'function') renderQuizzes();
+        renderAll();
     });
 }
 
-// دالة إضافة مقال
+// المقالات
 async function addArticle() {
     const title = document.getElementById("artTitle").value.trim();
     const content = document.getElementById("artContent").value.trim();
     if (!title || !content) return alert("اكمل البيانات");
-
-    articles.push({ id: generateId(), title, content, createdAt: new Date().getTime() });
-    saveArticles();
-    renderArticles();
+    await db.collection("articles").add({ title, content, createdAt: new Date() });
     document.getElementById("artTitle").value = "";
     document.getElementById("artContent").value = "";
     alert("تم النشر");
@@ -526,7 +515,6 @@ function renderArticles() {
 
     let html = `<div class="articles-grid">`;
     articles.forEach((art, i) => {
-        // نستخدم index لتكون المعرفات فريدة بشكل مؤكد في حال كان id غير متاح أو متطابق
         html += `
             <div class="article-card" style="padding-bottom: 5px;">
                 <h2 class="article-title" onclick="toggleArticle(${i})" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
@@ -550,7 +538,6 @@ function renderArticles() {
 }
 
 function toggleArticle(id) {
-    // إغلاق باقي المقالات (Accordion behavior)
     articles.forEach((art, i) => {
         if (i !== id) {
             const otherContent = document.getElementById(`content-${i}`);
@@ -577,7 +564,7 @@ async function editArticlePrompt(id) {
     const newTitle = prompt("العنوان:", art.title);
     const newContent = prompt("المحتوى:", art.content);
     if (newTitle && newContent) {
-        art.title = newTitle; art.content = newContent; saveArticles(); renderArticles();
+        await db.collection("articles").doc(id).update({ title: newTitle, content: newContent });
         alert("تم التعديل");
     }
 }
@@ -586,7 +573,7 @@ async function deleteArticle(id) {
     if (confirm("حذف؟")) await db.collection("articles").doc(id).delete();
 }
 
-// دالة إضافة تدريب
+// التدريبات
 async function addQuiz() {
     const question = document.getElementById("qTitle").value.trim();
     const timerInput = document.getElementById("qTimer") ? document.getElementById("qTimer").value : "";
@@ -599,15 +586,12 @@ async function addQuiz() {
         expirationTime = new Date().getTime() + (parseInt(timerInput) * 60000);
     }
 
-    quizzes.push({
-        id: generateId(),
+    await db.collection("quizzes").add({
         question,
         expirationTime,
         link: linkInput,
-        createdAt: new Date().getTime()
+        createdAt: new Date()
     });
-    saveQuizzes();
-    renderQuizzes();
 
     document.getElementById("qTitle").value = "";
     if (document.getElementById("qTimer")) document.getElementById("qTimer").value = "";
@@ -686,15 +670,14 @@ function renderQuizzes() {
 }
 
 async function deleteQuizWithoutPrompt(id) {
-    quizzes = quizzes.filter(q => q.id !== id);
-    saveQuizzes();
+    try { await db.collection("quizzes").doc(id).delete(); } catch(e){}
 }
 
 async function editQuizPrompt(id) {
     const q = quizzes.find(item => item.id === id);
     const newQ = prompt("السؤال:", q.question);
     if (newQ) {
-        q.question = newQ; saveQuizzes(); renderQuizzes();
+        await db.collection("quizzes").doc(id).update({ question: newQ });
         alert("تم التعديل");
     }
 }
@@ -707,65 +690,49 @@ function sendAnswer(id, question) {
 }
 
 async function deleteQuiz(id) {
-    if (confirm("حذف؟")) { quizzes = quizzes.filter(q => q.id !== id); saveQuizzes(); renderQuizzes(); }
+    if (confirm("حذف؟")) await db.collection("quizzes").doc(id).delete();
 }
 
-// جعل اللصق يتم كنص فقط بدون تنسيق داخل الحقول (Textarea & ContentEditable)
+// جعل اللصق يتم كنص فقط 
 document.addEventListener('paste', function (e) {
     if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.contentEditable !== 'true') return;
-
     e.preventDefault();
     let text = "";
-    if (e.clipboardData && e.clipboardData.getData) {
-        text = e.clipboardData.getData('text/plain');
-    } else if (window.clipboardData && window.clipboardData.getData) {
-        text = window.clipboardData.getData('Text');
-    }
-
-    if (document.queryCommandSupported('insertText')) {
-        document.execCommand('insertText', false, text);
-    } else {
-        // Fallback for newer browsers that removed execCommand for textareas
+    if (e.clipboardData && e.clipboardData.getData) { text = e.clipboardData.getData('text/plain'); } 
+    else if (window.clipboardData && window.clipboardData.getData) { text = window.clipboardData.getData('Text'); }
+    if (document.queryCommandSupported('insertText')) { document.execCommand('insertText', false, text); } 
+    else {
         const target = e.target;
         if (target.selectionStart !== undefined) {
             const startPos = target.selectionStart;
             const endPos = target.selectionEnd;
-            target.value = target.value.substring(0, startPos)
-                + text
-                + target.value.substring(endPos, target.value.length);
+            target.value = target.value.substring(0, startPos) + text + target.value.substring(endPos, target.value.length);
             target.selectionStart = startPos + text.length;
             target.selectionEnd = startPos + text.length;
-        } else {
-            target.value += text;
-        }
+        } else { target.value += text; }
     }
 });
 
-// Removed unneeded homeInfo empty object to fix SyntaxError
-
-// Home info already loaded from local storage using JSON.parse
-let homeInfo = JSON.parse(localStorage.getItem("homeInfo")) || {
-    name: "الأستاذ إسلام عبدالرحيم",
-    bio: "<p>خريج كلية دار العلوم – قسم اللغة العربية والشريعة الإسلامية، بتقدير ممتاز مع مرتبة الشرف.</p>",
-    image: "WhatsApp Image 2026-02-21 at 7.37.11 PM (2).jpg"
-};
-setTimeout(() => renderHomeInfo(), 200);
+// معلومات الصفحة الرئيسية من Firestore
+db.collection("settings").doc("homeInfo").onSnapshot((doc) => {
+    if (doc.exists) {
+        homeInfo = doc.data();
+    } else {
+        db.collection("settings").doc("homeInfo").set(homeInfo);
+    }
+    renderHomeInfo();
+}, (err) => { console.error(err); });
 
 function renderHomeInfo() {
     const heroImg = document.getElementById("heroImage");
     const heroName = document.getElementById("heroName");
     const heroBio = document.getElementById("heroBio");
-
     if (heroImg && homeInfo.image) heroImg.src = homeInfo.image;
     if (heroName && homeInfo.name) heroName.innerText = homeInfo.name;
-    if (heroBio && homeInfo.bio) {
-        heroBio.innerHTML = homeInfo.bio;
-    }
+    if (heroBio && homeInfo.bio) heroBio.innerHTML = homeInfo.bio;
 }
 
 function openEditHomeModal() {
-    // Convert <br> or html back if needed, but it's easier to just use HTML directly or strip tags for basic text 
-    // We'll let html be edited as simple text for bio
     let bioText = homeInfo.bio.replace(/<p(.*?)>/gi, '').replace(/<\/p>/gi, '\n').replace(/<br\s*\/?>/gi, '\n').trim();
     document.getElementById("editHomeName").value = homeInfo.name || "";
     document.getElementById("editHomeBio").value = bioText || "";
@@ -796,20 +763,19 @@ async function saveHomeInfo() {
         if (file) {
             imageUrl = await uploadImageToCloudinary(file);
         }
-
         let formattedBio = bioText.split('\n').filter(p => p.trim() !== '').map(p => `<p>${p}</p>`).join('');
 
-        homeInfo.name = name;
-        homeInfo.bio = formattedBio;
-        homeInfo.image = imageUrl;
-        saveHome();
-        renderHomeInfo();
+        await db.collection("settings").doc("homeInfo").set({
+            name: name,
+            bio: formattedBio,
+            image: imageUrl
+        }, { merge: true });
 
         closeEditHomeModal();
         alert("تم تحديث البيانات بنجاح!");
     } catch (err) {
         console.error(err);
-        alert("حدث خطأ: " + err.message);
+        alert("يرجى التأكد من تفعيل Cloud Firestore وضبط الـ Rules!");
     } finally {
         if (btn) {
             btn.innerText = originalText;
