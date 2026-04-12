@@ -55,7 +55,7 @@ db.collection("categories").orderBy("createdAt", "asc").onSnapshot((snapshot) =>
     }
 }, (error) => {
     console.error("Firestore error:", error);
-    if(admin) alert("يوجد مشكلة في الوصول لقاعدة البيانات Firestore! يرجى التأكد من تفعيل Cloud Firestore في إعدادات Firebase وضبط الـ Rules الخاصة به.");
+    if (admin) alert("يوجد مشكلة في الوصول لقاعدة البيانات Firestore! يرجى التأكد من تفعيل Cloud Firestore في إعدادات Firebase وضبط الـ Rules الخاصة به.");
 });
 
 // جلب المنتجات من Firestore في الوقت الفعلي
@@ -451,7 +451,6 @@ function hideLogin() {
 
 function login() {
     let pass = document.getElementById("adminPass").value;
-    let email = "islamabdalrhim7@gmail.com";
 
     const loginBox = document.getElementById("loginBox");
     const btns = loginBox.getElementsByTagName("button");
@@ -461,36 +460,27 @@ function login() {
     loginBtn.innerText = "جاري التحقق...";
     loginBtn.disabled = true;
 
-    firebase.auth().signInWithEmailAndPassword(email, pass)
-        .then((userCredential) => {
-            if (userCredential.user.email === "islamabdalrhim7@gmail.com") {
-                admin = true;
-                sessionStorage.setItem("isAdmin", "true");
-                document.getElementById("loginBox").style.display = "none";
-                document.getElementById("adminPass").value = "";
-                renderAll();
-            } else {
-                firebase.auth().signOut();
-                alert("هذا الحساب غير مصرح له كمسؤول!");
-            }
-        })
-        .catch((error) => {
-            alert("خطأ: " + error.message);
-        })
-        .finally(() => {
-            loginBtn.innerText = originalText;
-            loginBtn.disabled = false;
-        });
+    setTimeout(() => {
+        if (pass === "1357") {
+            admin = true;
+            sessionStorage.setItem("isAdmin", "true");
+            document.getElementById("loginBox").style.display = "none";
+            document.getElementById("adminPass").value = "";
+            renderAll();
+        } else {
+            alert("الرقم السري خاطئ!");
+        }
+        loginBtn.innerText = originalText;
+        loginBtn.disabled = false;
+    }, 500);
 }
 
 function logout() {
-    firebase.auth().signOut().then(() => {
-        admin = false;
-        sessionStorage.removeItem("isAdmin");
-        let panel = document.getElementById("adminPanel");
-        if (panel) panel.style.display = "none";
-        renderAll();
-    });
+    admin = false;
+    sessionStorage.removeItem("isAdmin");
+    let panel = document.getElementById("adminPanel");
+    if (panel) panel.style.display = "none";
+    renderAll();
 }
 
 // المقالات
@@ -670,7 +660,7 @@ function renderQuizzes() {
 }
 
 async function deleteQuizWithoutPrompt(id) {
-    try { await db.collection("quizzes").doc(id).delete(); } catch(e){}
+    try { await db.collection("quizzes").doc(id).delete(); } catch (e) { }
 }
 
 async function editQuizPrompt(id) {
@@ -698,9 +688,9 @@ document.addEventListener('paste', function (e) {
     if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && e.target.contentEditable !== 'true') return;
     e.preventDefault();
     let text = "";
-    if (e.clipboardData && e.clipboardData.getData) { text = e.clipboardData.getData('text/plain'); } 
+    if (e.clipboardData && e.clipboardData.getData) { text = e.clipboardData.getData('text/plain'); }
     else if (window.clipboardData && window.clipboardData.getData) { text = window.clipboardData.getData('Text'); }
-    if (document.queryCommandSupported('insertText')) { document.execCommand('insertText', false, text); } 
+    if (document.queryCommandSupported('insertText')) { document.execCommand('insertText', false, text); }
     else {
         const target = e.target;
         if (target.selectionStart !== undefined) {
