@@ -460,27 +460,33 @@ function login() {
     loginBtn.innerText = "جاري التحقق...";
     loginBtn.disabled = true;
 
-    setTimeout(() => {
-        if (pass === "1357") {
+    firebase.auth().signInWithEmailAndPassword("islamabdalrhim7@gmail.com", pass)
+        .then((userCredential) => {
             admin = true;
             sessionStorage.setItem("isAdmin", "true");
             document.getElementById("loginBox").style.display = "none";
             document.getElementById("adminPass").value = "";
             renderAll();
-        } else {
+            loginBtn.innerText = originalText;
+            loginBtn.disabled = false;
+        })
+        .catch((error) => {
             alert("الرقم السري خاطئ!");
-        }
-        loginBtn.innerText = originalText;
-        loginBtn.disabled = false;
-    }, 500);
+            loginBtn.innerText = originalText;
+            loginBtn.disabled = false;
+        });
 }
 
 function logout() {
-    admin = false;
-    sessionStorage.removeItem("isAdmin");
-    let panel = document.getElementById("adminPanel");
-    if (panel) panel.style.display = "none";
-    renderAll();
+    firebase.auth().signOut().then(() => {
+        admin = false;
+        sessionStorage.removeItem("isAdmin");
+        let panel = document.getElementById("adminPanel");
+        if (panel) panel.style.display = "none";
+        renderAll();
+    }).catch((error) => {
+        console.error("Logout error:", error);
+    });
 }
 
 // المقالات
